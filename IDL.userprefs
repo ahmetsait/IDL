@@ -1,0 +1,13 @@
+﻿<Properties StartupItem="IDL\IDL.dproj">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Release" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="IDL\IDL.d">
+    <Files>
+      <File FileName="IDL\IDL.d" Line="364" Column="4" />
+      <File FileName="IDL\LF2.d" Line="1" Column="1" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>
