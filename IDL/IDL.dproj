@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{0DBC15F2-386F-469A-B8B0-FC647C77D35A}</ProjectGuid>
+    <Compiler>DMD2</Compiler>
+    <PreferOneStepBuild>true</PreferOneStepBuild>
+    <UseDefaultCompiler>true</UseDefaultCompiler>
+    <IncrementalLinking>true</IncrementalLinking>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Debug</OutputPath>
+    <Externalconsole>true</Externalconsole>
+    <Target>SharedLibrary</Target>
+    <OutputName>IDL</OutputName>
+    <UnittestMode>false</UnittestMode>
+    <LinkinThirdPartyLibraries>false</LinkinThirdPartyLibraries>
+    <ObjectsDirectory>obj\Debug</ObjectsDirectory>
+    <DebugLevel>0</DebugLevel>
+    <VersionIds>
+      <VersionIds>
+        <String>DLL</String>
+      </VersionIds>
+    </VersionIds>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="AfterBuild" command="xcopy /Y &quot;${ProjectDir}\bin\Debug\IDL.dll&quot; &quot;D:\NX 1337\X-Code\C#\LF2.IDE\Assemblies\IDL.dll&quot;" externalConsole="True" />
+      </CustomCommands>
+    </CustomCommands>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release</OutputPath>
+    <Externalconsole>true</Externalconsole>
+    <Target>SharedLibrary</Target>
+    <OutputName>IDL</OutputName>
+    <UnittestMode>false</UnittestMode>
+    <LinkinThirdPartyLibraries>false</LinkinThirdPartyLibraries>
+    <ObjectsDirectory>obj\Release</ObjectsDirectory>
+    <DebugLevel>0</DebugLevel>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="AfterBuild" command="xcopy /Y &quot;${ProjectDir}\bin\Release\IDL.dll&quot; &quot;D:\NX 1337\X-Code\C#\LF2.IDE\Assemblies\IDL.dll&quot;" workingdir="" externalConsole="True" />
+      </CustomCommands>
+    </CustomCommands>
+    <VersionIds>
+      <VersionIds>
+        <String>DLL</String>
+      </VersionIds>
+    </VersionIds>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Unittest|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Unittest</OutputPath>
+    <Externalconsole>true</Externalconsole>
+    <Target>Executable</Target>
+    <OutputName>IDL</OutputName>
+    <UnittestMode>true</UnittestMode>
+    <LinkinThirdPartyLibraries>false</LinkinThirdPartyLibraries>
+    <ObjectsDirectory>obj\Unittest</ObjectsDirectory>
+    <DebugLevel>0</DebugLevel>
+    <ExtraCompilerArguments>-m32mscoff</ExtraCompilerArguments>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="IDL.d" />
+    <Compile Include="main.d" />
+    <Compile Include="LF2.d" />
+  </ItemGroup>
+</Project>
