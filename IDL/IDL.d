@@ -1280,6 +1280,10 @@ export extern(C) int InstantLoad(
 									if(bdy.h + bdy.y > bottom)
 										bottom = bdy.h + bdy.y;
 								}
+								frame.bdy_x = left;
+								frame.bdy_y = top;
+								frame.bdy_w = left - right;
+								frame.bdy_h = top - bottom;
 							}
 						}
 						frame.bdy_x = left;
@@ -1309,6 +1313,10 @@ export extern(C) int InstantLoad(
 									if(itr.h + itr.y > bottom)
 										bottom = itr.h + itr.y;
 								}
+								frame.itr_x = left;
+								frame.itr_y = top;
+								frame.itr_w = left - right;
+								frame.itr_h = top - bottom;
 							}
 						}
 						frame.itr_x = left;
