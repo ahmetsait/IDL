@@ -407,7 +407,7 @@ public:
 	}
 }
 
-enum ObjectType : int
+enum ObjectType : ubyte
 {
 	Char = 0,
 	Weapon = 1,
@@ -418,9 +418,9 @@ enum ObjectType : int
 	Drink = 6
 }
 
-enum DataType : int
+enum DataType : ubyte
 {
-	Char = 0,
+	Object = 0,
 	Stage = 1,
 	Background = 2
 }
@@ -430,14 +430,14 @@ struct ObjectData
 public:
 	int id;
 	ObjectType type;
-	immutable(wchar)* file;
+	wchar* file;
 }
 
 struct BackgroundData
 {
 public:
 	int id;
-	immutable(wchar)* file;
+	wchar* file;
 }
 
 struct DataTxt
