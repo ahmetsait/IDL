@@ -9,4 +9,3 @@ So what exactly LF2 is?
 It's a 2D fighting game that made by Marti Wong & Starsky Wong. See [Official Website](http://lf2.net)
 
 Little Fighter 2 has received significant recognition and popularity since its initial release. Being the most sophisticated 2D fighting game ever built, LF2 is also extremely customizable with its data file architecture. Over the years, numerous modifications have been made, ranged from spriting, data changing to exe editing. A vast amount of related work, including comics, animations and novels, have been created by thousands of people from all over the world, creating a strong and truly amazing community.
-
