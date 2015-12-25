@@ -1,6 +1,5 @@
-module LF2;
+module lf2;
 
-version(DLL):
 public:
 
 struct sOpoint
@@ -364,9 +363,9 @@ public:
 	sBackground[50] backgrounds = void;
 }
 
-const void* sGamePoint = cast(void*)0x458B00;
+const void* sGameAddr = cast(void*)0x458B00;
 
-struct sGame /// Address: 0x458B00
+struct sGame
 {
 public:
     int state = void; // 0x4
@@ -388,11 +387,11 @@ public:
 		ubyte[sStage.sizeof * 12] s5 = void;
 	}
 
-	private enum size_t stageSize = sStage.sizeof, segment = stageSize * 12;
+	private enum size_t size = sStage.sizeof * 60;
 
 	sStage opIndex(size_t i)
 	{
-		if(i < segment * 5)
+		if(i < size)
 			return (cast(sStage*)s1.ptr)[i];
 		else
 			assert(0);
@@ -400,7 +399,7 @@ public:
 
 	ref sStage opIndexAssign(ref sStage r, size_t i)
 	{
-		if(i < segment * 5)
+		if(i < size)
 			return (cast(sStage*)s1.ptr)[i] = r;
 		else
 			assert(0);
