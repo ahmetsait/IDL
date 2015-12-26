@@ -440,7 +440,7 @@ export extern(C) int InstantLoad(
 			while(allocItrSize < sItr.sizeof * 5) allocItrSize += sysInfo.dwPageSize;
 			while(allocBdySize < sBdy.sizeof * 5) allocBdySize += sysInfo.dwPageSize;
 
-			version(all)
+			version(none)
 			{
 				sGame* game = new sGame;
 				ReadProcessMemory(hProc, sGameAddr, game, sGame.sizeof, null);
