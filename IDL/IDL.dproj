@@ -51,6 +51,16 @@
     <ObjectsDirectory>obj\Unittest</ObjectsDirectory>
     <DebugLevel>0</DebugLevel>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Exe|AnyCPU' ">
+    <OutputPath>bin\Exe</OutputPath>
+    <Externalconsole>true</Externalconsole>
+    <Target>SharedLibrary</Target>
+    <OutputName>IDL</OutputName>
+    <UnittestMode>false</UnittestMode>
+    <LinkinThirdPartyLibraries>false</LinkinThirdPartyLibraries>
+    <ObjectsDirectory>obj\Exe</ObjectsDirectory>
+    <DebugLevel>0</DebugLevel>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="main.d" />
     <Compile Include="processaux.d" />
