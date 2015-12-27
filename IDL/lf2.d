@@ -371,7 +371,7 @@ public:
     int state = void; // 0x4
 	ubyte[400] exists = void; // 0x194
 	sObject*[400] objects = void; // 0x7d4
-	sFileManager* files = void; //FA4
+	sFileManager* files = void; // 0xFA4
 }
 
 /// Because DMD sucks.
@@ -389,7 +389,7 @@ public:
 
 	private enum size_t size = sStage.sizeof * 60;
 
-	sStage opIndex(size_t i)
+	ref sStage opIndex(size_t i)
 	{
 		if(i < size)
 			return (cast(sStage*)s1.ptr)[i];
