@@ -18,6 +18,14 @@ import utf = std.utf;
 import processaux;
 import lf2;
 
+__gshared File stagesLog, parserLog, objLog;
+
+static this()
+{
+	stagesLog = File("stages.log", "wb");
+	parserLog = File("parser.log", "wb");
+	objLog = File("obj.log", "wb");
+}
 
 /// Returns whether a value exists in the given input-range.
 /// The semantics of an input range (not checkable during compilation) are
@@ -489,45 +497,45 @@ export extern(C) int InstantLoad(
 
 			if(dataType == DataType.Background)
 			{
-				void* Addr = getAddrOfBackground(hProc, datIndex);
+				void* addr = getAddrOfBackground(hProc, datIndex);
 
 				throw new Exception("Background loading is not implemented");
 				//TODO: support background
 			}
 			else if(dataType == DataType.Stage)
 			{
-				void* Addr = getStagesAddr(hProc);
-
-				//allocate it cuz ReadProcessMemory won't do it for us
-				sStage[] RStage = (cast(sStage*)malloc(sStage.sizeof * 60))[0 .. 60];
-				if(!RStage)
-					throw new Exception("Could not allocate RStage array: " ~ (sStage.sizeof * 60).to!string ~ " byte");
-				scope(exit) free(RStage.ptr);
+				void* addr = getStagesAddr(hProc);
 				
-				if(ReadProcessMemory(hProc, Addr, RStage.ptr, (sStage.sizeof * 60), null) == FALSE)
+				//allocate it cuz ReadProcessMemory won't do it for us
+				sStage[] rstages = (cast(sStage*)malloc(sStage.sizeof * 60))[0 .. 60];
+				if(!rstages)
+					throw new Exception("Could not allocate RStage array: " ~ (sStage.sizeof * 60).to!string ~ " byte");
+				scope(exit) free(rstages.ptr);
+				
+				if(ReadProcessMemory(hProc, addr, rstages.ptr, (sStage.sizeof * 60), null) == FALSE)
 					throw new Exception("Could not read process memory: stages");
 				
 				//start over cleanly
-				sStage[] Stage = (cast(sStage*)malloc(sStage.sizeof * 60))[0 .. 60];
-				if(!Stage)
+				sStage[] stages = (cast(sStage*)malloc(sStage.sizeof * 60))[0 .. 60];
+				if(!stages)
 					throw new Exception("Could not allocate Stage array: " ~ (sStage.sizeof * 60).to!string ~ " byte");
-				scope(exit) free(Stage.ptr);
+				scope(exit) free(stages.ptr);
 				//fill up with zeros
-				memset(Stage.ptr, 0, sStage.sizeof * 60);
+				memset(stages.ptr, 0, sStage.sizeof * 60);
 				
 				for(size_t i = 0; i < 60; ++i)
 				{
-					Stage[i].phase_count = -1;
-					for(uint j = 0; j < 100; ++j)
+					stages[i].phase_count = -1;
+					for(size_t j = 0; j < 100; ++j)
 					{
-						Stage[i].phases[j].when_clear_goto_phase = -1;
-						for(uint k = 0; k < 60; ++k)
+						stages[i].phases[j].when_clear_goto_phase = -1;
+						for(size_t k = 0; k < 60; ++k)
 						{
-							Stage[i].phases[j].spawns[k].id = -1;
+							stages[i].phases[j].spawns[k].id = -1;
 							// because static arrays are value types muhahahaaa:
-							Stage[i].phases[j].spawns[k].unkwn1 = RStage[i].phases[j].spawns[k].unkwn1;
-							Stage[i].phases[j].spawns[k].unkwn2 = RStage[i].phases[j].spawns[k].unkwn2;
-							Stage[i].phases[j].spawns[k].unkwn3 = RStage[i].phases[j].spawns[k].unkwn3;
+							stages[i].phases[j].spawns[k].unkwn1 = rstages[i].phases[j].spawns[k].unkwn1;
+							stages[i].phases[j].spawns[k].unkwn2 = rstages[i].phases[j].spawns[k].unkwn2;
+							stages[i].phases[j].spawns[k].unkwn3 = rstages[i].phases[j].spawns[k].unkwn3;
 						}
 					}
 				}
@@ -671,20 +679,20 @@ export extern(C) int InstantLoad(
 											throw new Exception("Stage id could not be received");
 										int m = stageId;
 										{
-											for(uint n = 0; n < 100; ++n)
+											for(size_t n = 0; n < 100; ++n)
 											{
 												stage.phases[n].when_clear_goto_phase = -1;
-												for(uint k = 0; k < 60; ++k)
+												for(size_t k = 0; k < 60; ++k)
 												{
 													stage.phases[n].spawns[k].id = -1;
 													// because static arrays are value types muhahahaaa:
-													stage.phases[n].spawns[k].unkwn1 = Stage[m].phases[n].spawns[k].unkwn1;
-													stage.phases[n].spawns[k].unkwn2 = Stage[m].phases[n].spawns[k].unkwn2;
-													stage.phases[n].spawns[k].unkwn3 = Stage[m].phases[n].spawns[k].unkwn3;
+													stage.phases[n].spawns[k].unkwn1 = stages[m].phases[n].spawns[k].unkwn1;
+													stage.phases[n].spawns[k].unkwn2 = stages[m].phases[n].spawns[k].unkwn2;
+													stage.phases[n].spawns[k].unkwn3 = stages[m].phases[n].spawns[k].unkwn3;
 												}
 											}
 										}
-										Stage[stageId] = *stage;
+										stages[stageId] = *stage;
 										state = DataState.none;
 										break Lloop2;
 									default:
@@ -698,12 +706,12 @@ export extern(C) int InstantLoad(
 							break;
 					}
 				}
-				if(WriteProcessMemory(hProc, Addr, Stage.ptr, sStage.sizeof * 60, null) == FALSE)
+				if(WriteProcessMemory(hProc, addr, stages.ptr, sStage.sizeof * 60, null) == FALSE)
 					throw new Exception("Could not write stages to process memory");
 			}
 			else if(dataType == DataType.Object)
 			{
-				void* Addr = getAddrOfObj(hProc, datIndex);
+				void* addr = getAddrOfObj(hProc, datIndex);
 
 				//allocate it cuz ReadProcessMemory won't do it for us
 				sDataFile* RDataFile = cast(sDataFile*)malloc(sDataFile.sizeof);
@@ -711,8 +719,8 @@ export extern(C) int InstantLoad(
 					throw new Exception("Could not allocate RDataFile: " ~ sDataFile.sizeof.to!string ~ " bytes");
 				scope(exit) free(RDataFile);
 
-				if(ReadProcessMemory(hProc, Addr, RDataFile, sDataFile.sizeof, null) == FALSE)
-					throw new Exception(text("Could not read process memory: RDataFile\r\nAddr=", Addr, 
+				if(ReadProcessMemory(hProc, addr, RDataFile, sDataFile.sizeof, null) == FALSE)
+					throw new Exception(text("Could not read process memory: RDataFile\r\nAddr=", addr, 
 							"\r\ndatId=", datIndex));
 
 				//start over cleanly
@@ -1422,7 +1430,7 @@ export extern(C) int InstantLoad(
 					}
 				}
 
-				if(WriteProcessMemory(hProc, Addr, DataFile, sDataFile.sizeof, null) == FALSE)
+				if(WriteProcessMemory(hProc, addr, DataFile, sDataFile.sizeof, null) == FALSE)
 					throw new Exception("Could not write process memory: DataFile");
 			}
 		}
