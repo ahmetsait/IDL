@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 IDL
 ===
 ###### Instant Data Loader module for [LF2](http://lf2.net)
@@ -10,3 +11,11 @@ It's a 2D fighting game that made by Marti Wong & Starsky Wong. See [Official We
 
 Little Fighter 2 has received significant recognition and popularity since its initial release. Being the most sophisticated 2D fighting game ever built, LF2 is also extremely customizable with its data file architecture. Over the years, numerous modifications have been made, ranged from spriting, data changing to exe editing. A vast amount of related work, including comics, animations and novels, have been created by thousands of people from all over the world, creating a strong and truly amazing community.
 
+=======
+# IDL
+###### Instant Data Loader module for [LF2](lf2.net)
+----------------------------------
+This library provides an API for easily loading data files into [LF2](lf2.net)'s memory using Read/WriteProcessMemory WINAPI functions. This is especially useful when building data changer software. (for example: [LF2 IDE](https://github.com/NightmareX1337/LF2.IDE))
+
+More info on data changing: [LF Empire](http://lf-empire.de/)
+>>>>>>> origin/master
