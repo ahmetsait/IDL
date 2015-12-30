@@ -11,7 +11,6 @@ import std.conv : to, wtext, text;
 import std.format : format;
 import std.range : isInfinite, isIterable, isInputRange;
 import std.string : startsWith;
-<<<<<<< HEAD
 import std.stdio : File;
 import std.traits : isSomeString, isArray;
 import utf = std.utf;
@@ -1272,17 +1271,14 @@ export extern(C) int InstantLoad(
 							{
 								foreach(ref bdy; frame.bdys[1 .. frame.bdy_count])
 								{
-									foreach(bdy; frame.bdys[1 .. frame.bdy_count])
-									{
-										if(bdy.x < left)
-											left = bdy.x;
-										if(bdy.y < top)
-											top = bdy.y;
-										if(bdy.w + bdy.x > right)
-											right = bdy.w + bdy.x;
-										if(bdy.h + bdy.y > bottom)
-											bottom = bdy.h + bdy.y;
-									}
+									if(bdy.x < left)
+										left = bdy.x;
+									if(bdy.y < top)
+										top = bdy.y;
+									if(bdy.w + bdy.x > right)
+										right = bdy.w + bdy.x;
+									if(bdy.h + bdy.y > bottom)
+										bottom = bdy.h + bdy.y;
 								}
 								frame.bdy_x = left;
 								frame.bdy_y = top;
@@ -1308,17 +1304,14 @@ export extern(C) int InstantLoad(
 							{
 								foreach(ref itr; frame.itrs[1 .. frame.itr_count])
 								{
-									foreach(itr; frame.itrs[1 .. frame.itr_count])
-									{
-										if(itr.x < left)
-											left = itr.x;
-										if(itr.y < top)
-											top = itr.y;
-										if(itr.w + itr.x > right)
-											right = itr.w + itr.x;
-										if(itr.h + itr.y > bottom)
-											bottom = itr.h + itr.y;
-									}
+									if(itr.x < left)
+										left = itr.x;
+									if(itr.y < top)
+										top = itr.y;
+									if(itr.w + itr.x > right)
+										right = itr.w + itr.x;
+									if(itr.h + itr.y > bottom)
+										bottom = itr.h + itr.y;
 								}
 								frame.itr_x = left;
 								frame.itr_y = top;
