@@ -315,6 +315,12 @@ public:
     double ratio = void;
     int role = void; /// soldier = 1, boss = 2
 	int unkwn3 = void;
+	
+	string toString()
+	{
+		import std.format;
+		return format("id: %d  hp: %d  act: %d  x: %d  times: %d  ratio: %f  reserve: %d  join: %d  join_reverse: %d", id, hp, act, times, ratio, x, reserve, join, join_reserve);
+	}
 }
 
 struct sPhase
@@ -324,6 +330,34 @@ public:
     char[52] music = void;
 	sSpawn[60] spawns = void;
     int when_clear_goto_phase = void;
+	
+	string toString()
+	{
+		char[] str;
+		str.reserve(1024);
+		str ~= "        <phase> bound: \n";
+		str ~= bound;
+		size_t mn = 0;
+		for(size_t i = 0; i < music.length; i++)
+			if(music[i] == '\0')
+				mn = i;
+		if(mn > 0)
+		{
+			str ~= "\n                music: ";
+			str ~= music[0 .. mn];
+		}
+		for(size_t i = 0; i < spawns.length; i++)
+		{
+			if(spawns[i].id >= 0)
+			{
+				str ~= "                ";
+				str ~= spawns[i].toString();
+				str ~= "\n";
+			}
+		}
+		str ~= "        <phase_end>";
+		return str.idup;
+	}
 }
 
 struct sStage
@@ -331,6 +365,25 @@ struct sStage
 public:
     int phase_count = void;
 	sPhase[100] phases = void;
+
+	string toString(int id = -1)
+	{
+		char[] str;
+		str ~= "<stage>";
+		str.reserve(1024 * 16);
+		if(id >= 0)
+		{
+			str ~= " id: ";
+			str ~= id;
+		}
+		str ~= "\n";
+		for(size_t i = 0; i < phase_count; i++)
+		{
+			str ~= phases[i].toString();
+		}
+		str ~= "\n<stage_end>";
+		return str.idup;
+	}
 }
 
 struct sBackground
