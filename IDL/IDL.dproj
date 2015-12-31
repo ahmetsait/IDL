@@ -65,6 +65,6 @@
     <Compile Include="main.d" />
     <Compile Include="processaux.d" />
     <Compile Include="lf2.d" />
-    <Compile Include="idl.d" />
+    <Compile Include="IDL.d" />
   </ItemGroup>
 </Project>

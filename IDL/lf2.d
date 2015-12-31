@@ -319,7 +319,7 @@ public:
 	string toString()
 	{
 		import std.format;
-		return format("id: %d  hp: %d  act: %d  x: %d  times: %d  ratio: %f  reserve: %d  join: %d  join_reverse: %d", id, hp, act, times, ratio, x, reserve, join, join_reserve);
+		return format("id: %d  hp: %d  act: %d  x: %d  times: %d  ratio: %f  reserve: %d  join: %d  join_reverse: %d%s", id, hp, act, times, ratio, x, reserve, join, join_reserve, role == 1 ? "\t<soldier>" : role == 2 ? "\t<boss>" : "");
 	}
 }
 
@@ -333,18 +333,26 @@ public:
 	
 	string toString()
 	{
+		import std.conv : to;
 		char[] str;
 		str.reserve(1024);
-		str ~= "        <phase> bound: \n";
-		str ~= bound;
+		str ~= "        <phase> bound: ";
+		str ~= bound.to!string;
+		str ~= "\n";
 		size_t mn = 0;
 		for(size_t i = 0; i < music.length; i++)
+		{
 			if(music[i] == '\0')
+			{
 				mn = i;
+				break;
+			}
+		}
 		if(mn > 0)
 		{
-			str ~= "\n                music: ";
+			str ~= "                music: ";
 			str ~= music[0 .. mn];
+			str ~= "\n";
 		}
 		for(size_t i = 0; i < spawns.length; i++)
 		{
@@ -355,7 +363,7 @@ public:
 				str ~= "\n";
 			}
 		}
-		str ~= "        <phase_end>";
+		str ~= "        <phase_end>\n";
 		return str.idup;
 	}
 }
@@ -368,20 +376,22 @@ public:
 
 	string toString(int id = -1)
 	{
+		import std.conv : to;
 		char[] str;
 		str ~= "<stage>";
 		str.reserve(1024 * 16);
 		if(id >= 0)
 		{
 			str ~= " id: ";
-			str ~= id;
+			str ~= id.to!string;
 		}
 		str ~= "\n";
 		for(size_t i = 0; i < phase_count; i++)
 		{
 			str ~= phases[i].toString();
+			str ~= "\n";
 		}
-		str ~= "\n<stage_end>";
+		str ~= "<stage_end>";
 		return str.idup;
 	}
 }
