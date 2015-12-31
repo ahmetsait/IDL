@@ -18,15 +18,6 @@ import utf = std.utf;
 import processaux;
 import lf2;
 
-__gshared File stagesLog, parserLog, objLog;
-
-static this()
-{
-	stagesLog = File("stages.log", "wb");
-	parserLog = File("parser.log", "wb");
-	objLog = File("obj.log", "wb");
-}
-
 /// Returns whether a value exists in the given input-range.
 /// The semantics of an input range (not checkable during compilation) are
 /// assumed to be the following ($(D r) is an object of type $(D InputRange)):
@@ -147,6 +138,8 @@ const char lineCommentChar = '#';
 /// This function tokenizes LF2 data and returns a slice-array of strings. Returned slices point to the given string.
 public Token!S[] parseData(S)(S data) if(isSomeString!S)
 {
+	File parserLog = File("parser.log", "wb");
+	scope(exit) parserLog.close();
 	Token!S[] slices = new Token!S[0];
 	slices.reserve(data.length / 5); // Pre-allocate an aprox memory we might need
 
@@ -255,22 +248,20 @@ Lforeach:
 		default:
 			break;
 	}
-	debug
 	{
-		File f = File("tokens.txt", "wb");
 		size_t ln = 1;
 		foreach(t; slices)
 		{
 			if(ln < t.line)
 			{
-				f.write("\r\n", t.toString);
+				parserLog.write("\r\n", t.toString);
 				ln = t.line;
 			}
 			else
-				f.write(t.toString);
+				parserLog.write(t.toString);
 		}
-		f.writeln("\r\n");
-		f.close();
+		parserLog.writeln("\r\n");
+		parserLog.close();
 	}
 
 	return slices;
@@ -485,15 +476,6 @@ export extern(C) int InstantLoad(
 			if(hProc == INVALID_HANDLE_VALUE)
 				throw new Exception("Could not open process. Error code: " ~ GetLastError().to!string ~ "\r\nMaybe you need Administrator privileges?");
 			scope(exit) CloseHandle(hProc);
-			
-			SYSTEM_INFO sysInfo;
-			GetSystemInfo(&sysInfo);
-			//dwPageSize is needed to figure out how big RegionSize will be when we allocate ourself
-			
-			uint allocItrSize = sysInfo.dwPageSize, allocBdySize = sysInfo.dwPageSize;
-
-			while(allocItrSize < sItr.sizeof * 5) allocItrSize += sysInfo.dwPageSize;
-			while(allocBdySize < sBdy.sizeof * 5) allocBdySize += sysInfo.dwPageSize;
 
 			if(dataType == DataType.Background)
 			{
@@ -505,11 +487,13 @@ export extern(C) int InstantLoad(
 			else if(dataType == DataType.Stage)
 			{
 				void* addr = getStagesAddr(hProc);
+				File stagesLog = File("stages.log", "wb");
+				scope(exit) stagesLog.close();
 				
 				//allocate it cuz ReadProcessMemory won't do it for us
 				sStage[] rstages = (cast(sStage*)malloc(sStage.sizeof * 60))[0 .. 60];
 				if(!rstages)
-					throw new Exception("Could not allocate RStage array: " ~ (sStage.sizeof * 60).to!string ~ " byte");
+					throw new Exception("Could not allocate rstages: " ~ (sStage.sizeof * 60).to!string ~ " byte");
 				scope(exit) free(rstages.ptr);
 				
 				if(ReadProcessMemory(hProc, addr, rstages.ptr, (sStage.sizeof * 60), null) == FALSE)
@@ -518,7 +502,7 @@ export extern(C) int InstantLoad(
 				//start over cleanly
 				sStage[] stages = (cast(sStage*)malloc(sStage.sizeof * 60))[0 .. 60];
 				if(!stages)
-					throw new Exception("Could not allocate Stage array: " ~ (sStage.sizeof * 60).to!string ~ " byte");
+					throw new Exception("Could not allocate stages: " ~ (sStage.sizeof * 60).to!string ~ " byte");
 				scope(exit) free(stages.ptr);
 				//fill up with zeros
 				memset(stages.ptr, 0, sStage.sizeof * 60);
@@ -693,6 +677,7 @@ export extern(C) int InstantLoad(
 											}
 										}
 										stages[stageId] = *stage;
+										stagesLog.writeln((*stage).toString(stageId), "\n\n");
 										state = DataState.none;
 										break Lloop2;
 									default:
@@ -712,6 +697,17 @@ export extern(C) int InstantLoad(
 			else if(dataType == DataType.Object)
 			{
 				void* addr = getAddrOfObj(hProc, datIndex);
+				File objLog = File("obj.log", "wb");
+				scope(exit) objLog.close();
+
+				SYSTEM_INFO sysInfo;
+				GetSystemInfo(&sysInfo);
+				//dwPageSize is needed to figure out how big RegionSize will be when we allocate ourself
+				
+				uint allocItrSize = sysInfo.dwPageSize, allocBdySize = sysInfo.dwPageSize;
+				
+				while(allocItrSize < sItr.sizeof * 5) allocItrSize += sysInfo.dwPageSize;
+				while(allocBdySize < sBdy.sizeof * 5) allocBdySize += sysInfo.dwPageSize;
 
 				//allocate it cuz ReadProcessMemory won't do it for us
 				sDataFile* RDataFile = cast(sDataFile*)malloc(sDataFile.sizeof);
@@ -766,8 +762,6 @@ export extern(C) int InstantLoad(
 					DataFile.frames[i].unkwn9 = RDataFile.frames[i].unkwn9;
 				}
 
-				//DataFile.type = dataType;
-				
 				DataState state = DataState.none;
 			Lcloop1:
 				for(size_t i = 0; i < tokens.length; i++)
