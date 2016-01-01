@@ -2,20 +2,9 @@
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Release" />
   <MonoDevelop.Ide.Workbench ActiveDocument="IDL\IDL.d">
     <Files>
-      <File FileName="IDL\IDL.d" Line="479" Column="4" />
-      <File FileName="IDL\lf2.d" Line="320" Column="3" />
+      <File FileName="IDL\IDL.d" Line="97" Column="1" />
+      <File FileName="IDL\lf2.d" Line="407" Column="28" />
     </Files>
-    <Pads>
-      <Pad Id="ProjectPad">
-        <State name="__root__">
-          <Node name="IDL" expanded="True">
-            <Node name="IDL" expanded="True">
-              <Node name="IDL.d" selected="True" />
-            </Node>
-          </Node>
-        </State>
-      </Pad>
-    </Pads>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore />
