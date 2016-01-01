@@ -108,7 +108,7 @@ export extern(C) BOOL SendGameStartMsg(HWND window) nothrow @nogc @system
 	WPARAM xy = (380 | (230 << 16));
 	if(SetCursorPos(rect.left + 380, rect.top + 25 + 230) == TRUE)
 		SendMessageA(window, WM_LBUTTONDOWN, xy, 1);
-
+	
 	return TRUE;
 }
 
@@ -133,13 +133,16 @@ struct Token(S) if(isSomeString!S)
 
 const string tokenHeads = ['<'], tokenEnds = ['>', ':'], tokenDelims = [' ', '\t', '\n', '\r'], 
 	lineEnd = ['\n', '\r'];
-const char lineCommentChar = '#';
+enum char lineCommentChar = '#';
 
 /// This function tokenizes LF2 data and returns a slice-array of strings. Returned slices point to the given string.
-public Token!S[] parseData(S)(S data) if(isSomeString!S)
+public Token!S[] parseData(S)(S data, bool includeComments = false) if(isSomeString!S)
 {
-	File parserLog = File("parser.log", "wb");
-	scope(exit) parserLog.close();
+	debug
+	{
+		File parserLog = File("parser.log", "wb");
+		scope(exit) parserLog.close();
+	}
 	Token!S[] slices = new Token!S[0];
 	slices.reserve(data.length / 5); // Pre-allocate an aprox memory we might need
 
@@ -167,9 +170,9 @@ Lforeach:
 				{
 					throw new Exception(format("Unexpected token ending delimeter: '%c' in line: %d; at col: %d", ch, line, col));
 				}
-				else if(ch == lineCommentChar) // #
+				else if(ch == lineCommentChar && !includeComments) // #
 				{
-					state = TokenState.comment;
+				    state = TokenState.comment;
 				}
 				else
 				{
@@ -197,9 +200,9 @@ Lforeach:
 				{
 					throw new Exception(format("Unexpected token ending delimeter: '%c' in line: %d; at col: %d", ch, line, col));
 				}
-				else if(ch == lineCommentChar) // #
+				else if(ch == lineCommentChar && !includeComments) // #
 				{
-					throw new Exception(format("Unexpected comment char: '%c' in line: %d; at col: %d", ch, line, col));
+				    throw new Exception(format("Unexpected comment char: '%c' in line: %d; at col: %d", ch, line, col));
 				}
 				break Lswitch;
 			case TokenState.token:
@@ -219,15 +222,15 @@ Lforeach:
 					slices ~= Token!S(data[tokenStart .. i + 1], tokenLine, tokenCol);
 					state = TokenState.none;
 				}
-				else if(ch == lineCommentChar) // #
+				else if(ch == lineCommentChar && !includeComments) // #
 				{
-					slices ~= Token!S(data[tokenStart .. i], tokenLine, tokenCol);
-					state = TokenState.comment;
+				    slices ~= Token!S(data[tokenStart .. i], tokenLine, tokenCol);
+				    state = TokenState.comment;
 				}
 				break Lswitch;
 			case TokenState.comment:
 				if(lineEnd.contains(ch))
-					state = TokenState.none;
+				    state = TokenState.none;
 				break Lswitch;
 		}
 		if(ch == '\n')
@@ -248,6 +251,7 @@ Lforeach:
 		default:
 			break;
 	}
+	debug
 	{
 		size_t ln = 1;
 		foreach(t; slices)
@@ -336,7 +340,7 @@ export extern(C) int ReadDataTxt(
 		Token!(typeof(dat))[] tokens;
 		try
 		{
-			tokens = parseData(dat);
+			tokens = parseData(dat, false);
 		}
 		catch(Exception ex)
 		{
@@ -434,9 +438,9 @@ export extern(C) int ReadDataTxt(
 		MessageBoxW(hMainWindow, utf.toUTF16z(ex.toString), "[IDL.dll] data.txt Reading Error", MB_SETFOREGROUND);
 		return -1;
 	}
-	catch(Error er)
+	catch(Error err)
 	{
-		MessageBoxW(hMainWindow, utf.toUTF16z(er.toString), "[IDL.dll] Fatal Error", MB_SETFOREGROUND);
+		MessageBoxW(hMainWindow, utf.toUTF16z(err.toString), "[IDL.dll] Fatal Error", MB_SETFOREGROUND);
 		return int.max;
 	}
 	return 0;
@@ -463,7 +467,7 @@ export extern(C) int InstantLoad(
 			Token!(typeof(dat))[] tokens;
 			try
 			{
-				tokens = parseData(dat);
+				tokens = parseData(dat, true);
 			}
 			catch(Exception ex)
 			{
@@ -472,7 +476,6 @@ export extern(C) int InstantLoad(
 			}
 			
 			HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, procId);
-
 			if(hProc == INVALID_HANDLE_VALUE)
 				throw new Exception("Could not open process. Error code: " ~ GetLastError().to!string ~ "\r\nMaybe you need Administrator privileges?");
 			scope(exit) CloseHandle(hProc);
@@ -487,8 +490,12 @@ export extern(C) int InstantLoad(
 			else if(dataType == DataType.Stage)
 			{
 				void* addr = getStagesAddr(hProc);
-				File stagesLog = File("stages.log", "wb");
-				scope(exit) stagesLog.close();
+
+				debug
+				{
+					File rstagesLog = File("rstages.log", "wb");
+					scope(exit) rstagesLog.close();
+				}
 				
 				//allocate it cuz ReadProcessMemory won't do it for us
 				sStage[] rstages = (cast(sStage*)malloc(sStage.sizeof * 60))[0 .. 60];
@@ -498,7 +505,18 @@ export extern(C) int InstantLoad(
 				
 				if(ReadProcessMemory(hProc, addr, rstages.ptr, (sStage.sizeof * 60), null) == FALSE)
 					throw new Exception("Could not read process memory: stages");
-				
+
+				debug
+				{
+					foreach(i, ref stage; rstages)
+					{
+						rstagesLog.write(stage.toString(i));
+					}
+
+					File stagesLog = File("stages.log", "wb");
+					scope(exit) stagesLog.close();
+				}
+
 				//start over cleanly
 				sStage[] stages = (cast(sStage*)malloc(sStage.sizeof * 60))[0 .. 60];
 				if(!stages)
@@ -586,7 +604,7 @@ export extern(C) int InstantLoad(
 													phase.spawns[spawni].hp = 500;
 													phase.spawns[spawni].act = 9;
 													phase.spawns[spawni].times = 1;
-													phase.spawns[spawni].x = 80 + (phasei > 0 ? stage.phases[phasei - 1].bound : 0);
+													phase.spawns[spawni].x = 80 + phase.bound;
 													break;
 												case "x:":
 													if(spawni < 0)
@@ -665,10 +683,8 @@ export extern(C) int InstantLoad(
 										{
 											for(size_t n = 0; n < 100; ++n)
 											{
-												stage.phases[n].when_clear_goto_phase = -1;
 												for(size_t k = 0; k < 60; ++k)
 												{
-													stage.phases[n].spawns[k].id = -1;
 													// because static arrays are value types muhahahaaa:
 													stage.phases[n].spawns[k].unkwn1 = stages[m].phases[n].spawns[k].unkwn1;
 													stage.phases[n].spawns[k].unkwn2 = stages[m].phases[n].spawns[k].unkwn2;
@@ -677,7 +693,7 @@ export extern(C) int InstantLoad(
 											}
 										}
 										stages[stageId] = *stage;
-										stagesLog.writeln((*stage).toString(stageId), "\n\n");
+										debug stagesLog.write((*stage).toString(stageId));
 										state = DataState.none;
 										break Lloop2;
 									default:
@@ -697,8 +713,12 @@ export extern(C) int InstantLoad(
 			else if(dataType == DataType.Object)
 			{
 				void* addr = getAddrOfObj(hProc, datIndex);
-				File objLog = File("obj.log", "wb");
-				scope(exit) objLog.close();
+
+				debug
+				{
+					File objLog = File("obj.log", "wb");
+					scope(exit) objLog.close();
+				}
 
 				SYSTEM_INFO sysInfo;
 				GetSystemInfo(&sysInfo);
@@ -718,6 +738,13 @@ export extern(C) int InstantLoad(
 				if(ReadProcessMemory(hProc, addr, RDataFile, sDataFile.sizeof, null) == FALSE)
 					throw new Exception(text("Could not read process memory: RDataFile\r\nAddr=", addr, 
 							"\r\ndatId=", datIndex));
+				debug
+				{
+					objLog.writeln("itr_x: ", RDataFile.frames[0].itr_x,
+						"  itr_y: ", RDataFile.frames[0].itr_y,
+						"  itr_w: ", RDataFile.frames[0].itr_w,
+						"  itr_h: ", RDataFile.frames[0].itr_h, "\n\n\n");
+				}
 
 				//start over cleanly
 				sDataFile* DataFile = cast(sDataFile*)malloc(sDataFile.sizeof);
@@ -1276,14 +1303,14 @@ export extern(C) int InstantLoad(
 								}
 								frame.bdy_x = left;
 								frame.bdy_y = top;
-								frame.bdy_w = left - right;
-								frame.bdy_h = top - bottom;
+								frame.bdy_w = right - left;
+								frame.bdy_h = bottom - top;
 							}
 						}
 						frame.bdy_x = left;
 						frame.bdy_y = top;
-						frame.bdy_w = left - right;
-						frame.bdy_h = top - bottom;
+						frame.bdy_w = right - left;
+						frame.bdy_h = bottom - top;
 					}
 					{
 						// simple math: calculate the outer-most bounding rectangle of itrs
@@ -1309,14 +1336,21 @@ export extern(C) int InstantLoad(
 								}
 								frame.itr_x = left;
 								frame.itr_y = top;
-								frame.itr_w = left - right;
-								frame.itr_h = top - bottom;
+								frame.itr_w = right - left;
+								frame.itr_h = bottom - top;
 							}
 						}
 						frame.itr_x = left;
 						frame.itr_y = top;
-						frame.itr_w = left - right;
-						frame.itr_h = top - bottom;
+						frame.itr_w = right - left;
+						frame.itr_h = bottom - top;
+						debug
+						{
+							objLog.writeln("itr_x: ", frame.itr_x,
+								"  itr_y: ", frame.itr_y,
+								"  itr_w: ", frame.itr_w,
+								"  itr_h: ", frame.itr_h, "\n");
+						}
 					}
 					
 					if(frame.bdy_count > 0)
@@ -1330,7 +1364,8 @@ export extern(C) int InstantLoad(
 							if(bdyAlloc == null)
 								throw new Exception("Could not allocate bdy array for LF2");
 							
-							WriteProcessMemory(hProc, bdyAlloc, frame.bdys, sBdy.sizeof * frame.bdy_count, null);
+							if(WriteProcessMemory(hProc, bdyAlloc, frame.bdys, sBdy.sizeof * frame.bdy_count, null) == FALSE)
+								throw new Exception("Could not write process memory: frame.bdys");
 							frame.bdys = bdyAlloc;
 						}
 						else if(RDataFile.frames[i].bdy_count < frame.bdy_count)
@@ -1352,12 +1387,14 @@ export extern(C) int InstantLoad(
 							if(bdyAlloc == null)
 								throw new Exception("Could not allocate bdy array for process memory");
 							
-							WriteProcessMemory(hProc, bdyAlloc, frame.bdys, sBdy.sizeof * frame.bdy_count, null);
+							if(WriteProcessMemory(hProc, bdyAlloc, frame.bdys, sBdy.sizeof * frame.bdy_count, null) == FALSE)
+								throw new Exception("Could not write process memory: frame.bdys");
 							frame.bdys = bdyAlloc;
 						}
 						else
 						{
-							WriteProcessMemory(hProc, RDataFile.frames[i].bdys, frame.bdys, sBdy.sizeof * frame.bdy_count, null);
+							if(WriteProcessMemory(hProc, RDataFile.frames[i].bdys, frame.bdys, sBdy.sizeof * frame.bdy_count, null) == FALSE)
+								throw new Exception("Could not write process memory: frame.bdys");
 							frame.bdys = RDataFile.frames[i].bdys;
 						}
 					}
@@ -1386,7 +1423,8 @@ export extern(C) int InstantLoad(
 							if(itrAlloc == null)
 								throw new Exception("Could not allocate itr array for LF2");
 							
-							WriteProcessMemory(hProc, itrAlloc, frame.itrs, sItr.sizeof * frame.itr_count, null);
+							if(WriteProcessMemory(hProc, itrAlloc, frame.itrs, sItr.sizeof * frame.itr_count, null) == FALSE)
+								throw new Exception("Could not write process memory: frame.itrs");
 							frame.itrs = itrAlloc;
 						}
 						else if(RDataFile.frames[i].itr_count < frame.itr_count)
@@ -1408,12 +1446,14 @@ export extern(C) int InstantLoad(
 							if(itrAlloc == null)
 								throw new Exception("Could not allocate itr array for LF2");
 							
-							WriteProcessMemory(hProc, itrAlloc, frame.itrs, sItr.sizeof * frame.itr_count, null);
+							if(WriteProcessMemory(hProc, itrAlloc, frame.itrs, sItr.sizeof * frame.itr_count, null) == FALSE)
+								throw new Exception("Could not write process memory: frame.itrs");
 							frame.itrs = itrAlloc;
 						}
 						else
 						{
-							WriteProcessMemory(hProc, RDataFile.frames[i].itrs, frame.itrs, sItr.sizeof * frame.itr_count, null);
+							if(WriteProcessMemory(hProc, RDataFile.frames[i].itrs, frame.itrs, sItr.sizeof * frame.itr_count, null) == FALSE)
+								throw new Exception("Could not write process memory: DataFile");
 							frame.itrs = RDataFile.frames[i].itrs;
 						}
 					}
