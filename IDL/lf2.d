@@ -316,10 +316,10 @@ public:
     int role = void; /// soldier = 1, boss = 2
 	int unkwn3 = void;
 	
-	string toString()
+	string toString(sPhase* phase = null)
 	{
-		import std.format;
-		return format("id: %d  hp: %d  act: %d  x: %d  times: %d  ratio: %f  reserve: %d  join: %d  join_reverse: %d%s", id, hp, act, times, ratio, x, reserve, join, join_reserve, role == 1 ? "\t<soldier>" : role == 2 ? "\t<boss>" : "");
+		import std.conv : text, to;
+		return text("id: ", id, hp != 500 ? "  hp: " ~ hp.to!string : "", act != 9 ? "  act: " ~ act.to!string : "", phase != null ? (x != (phase.bound + 80) ? "  x: " ~ x.to!string : "") : "  x: " ~ x.to!string, times != 1 ? "  times: " ~ times.to!string : "", ratio != 0 ? "  ratio: " ~ ratio.to!string : "", reserve != 0 ? "  reserve: " ~ reserve.to!string : "", join != 0 ? "  join: " ~ join.to!string : "", join_reserve != 0 ? "  join_reverse: " ~ join_reserve.to!string : "", role == 1 ? "\t<soldier>" : role == 2 ? "\t<boss>" : "");
 	}
 }
 
@@ -356,10 +356,10 @@ public:
 		}
 		for(size_t i = 0; i < spawns.length; i++)
 		{
-			if(spawns[i].id >= 0)
+			if(spawns[i].id > 0)
 			{
 				str ~= "                ";
-				str ~= spawns[i].toString();
+				str ~= spawns[i].toString(&this);
 				str ~= "\n";
 			}
 		}
@@ -377,6 +377,17 @@ public:
 	string toString(int id = -1)
 	{
 		import std.conv : to;
+		bool b = false;
+		for(size_t i = 0; i < phase_count && i < phases.length; i++)
+		{
+			if(phases[i].bound != 0)
+			{
+				b = true;
+				break;
+			}
+		}
+		if(b == false)
+			return "";
 		char[] str;
 		str ~= "<stage>";
 		str.reserve(1024 * 16);
@@ -386,12 +397,14 @@ public:
 			str ~= id.to!string;
 		}
 		str ~= "\n";
-		for(size_t i = 0; i < phase_count; i++)
+		size_t i;
+		for(i = 0; i < phase_count - 1 && i < phases.length - 1; i++)
 		{
 			str ~= phases[i].toString();
 			str ~= "\n";
 		}
-		str ~= "<stage_end>";
+		str ~= phases[i].toString();
+		str ~= "<stage_end>\n\n\n";
 		return str.idup;
 	}
 }
