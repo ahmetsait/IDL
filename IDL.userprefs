@@ -1,8 +1,8 @@
 ﻿<Properties StartupItem="IDL\IDL.dproj">
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Release" />
   <MonoDevelop.Ide.Workbench ActiveDocument="IDL\IDL.d">
     <Files>
-      <File FileName="IDL\IDL.d" Line="235" Column="24" />
+      <File FileName="IDL\IDL.d" Line="226" Column="21" />
       <File FileName="IDL\lf2.d" Line="181" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
