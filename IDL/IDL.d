@@ -789,7 +789,7 @@ export extern(C) int InstantLoad(
 												case "join_reserve:":
 													if(spawni < 0)
 														continue Lloop3;
-													//phase.spawns[spawni].join_reserve = tokens[++i].str.to!int;
+													phase.spawns[spawni].join_reserve = tokens[++i].str.to!int;
 													break;
 												case "<boss>":
 													if(spawni < 0)
