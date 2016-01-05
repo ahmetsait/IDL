@@ -146,7 +146,7 @@ enum char lineCommentChar = '#';
 /// This function tokenizes LF2 data and returns a slice-array of strings. Returned slices point to the given string.
 public Token!S[] parseData(S)(S data, bool includeComments = false) if(isSomeString!S)
 {
-	debug
+	debug(LogFile)
 	{
 		File parserLog = File("parser.log", "wb");
 		scope(exit) parserLog.close();
@@ -263,7 +263,7 @@ Lforeach:
 		default:
 			break;
 	}
-	debug
+	debug(LogFile)
 	{
 		size_t ln = 1;
 		foreach(t; slices)
@@ -631,7 +631,7 @@ export extern(C) int InstantLoad(
 			{
 				void* addr = getStagesAddr(hProc);
 
-				debug
+				debug(LogFile)
 				{
 					File rstagesLog = File("rstages.log", "wb");
 					scope(exit) rstagesLog.close();
@@ -646,7 +646,7 @@ export extern(C) int InstantLoad(
 				if(ReadProcessMemory(hProc, addr, rstages.ptr, (sStage.sizeof * 60), null) == FALSE)
 					throw new Exception("Could not read process memory: stages");
 
-				debug
+				debug(LogFile)
 				{
 					foreach(i, ref stage; rstages)
 					{
@@ -740,7 +740,6 @@ export extern(C) int InstantLoad(
 														}
 														break;
 													}
-													break;
 												case "id:":
 													spawni++;
 													if(spawni >= 60)
@@ -838,7 +837,7 @@ export extern(C) int InstantLoad(
 											}
 										}
 										stages[stageId] = *stage;
-										debug stagesLog.write((*stage).toString(stageId));
+										debug(LogFile) stagesLog.write((*stage).toString(stageId));
 										state = DataState.none;
 										break Lloop2;
 									default:
@@ -859,7 +858,7 @@ export extern(C) int InstantLoad(
 			{
 				void* addr = getAddrOfObj(hProc, datIndex);
 
-				debug
+				debug(LogFile)
 				{
 					File objLog = File("obj.log", "wb");
 					scope(exit) objLog.close();
@@ -885,7 +884,8 @@ export extern(C) int InstantLoad(
 				if(ReadProcessMemory(hProc, addr, RDataFile, sDataFile.sizeof, null) == FALSE)
 					throw new Exception(text("Could not read process memory: RDataFile\r\nAddr=", addr, 
 							"\r\ndatId=", datIndex));
-				debug
+
+				debug(LogFile)
 				{
 					{
 						objUnknownLog.writeln(RDataFile.weapon_strength_list);
@@ -1583,7 +1583,7 @@ export extern(C) int InstantLoad(
 						frame.itr_y = top;
 						frame.itr_w = right - left;
 						frame.itr_h = bottom - top;
-						debug
+						debug(LogFile)
 						{
 							objLog.writeln("itr_x: ", frame.itr_x,
 								"  itr_y: ", frame.itr_y,
