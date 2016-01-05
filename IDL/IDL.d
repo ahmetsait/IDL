@@ -105,10 +105,10 @@ export extern(C) BOOL SendGameStartMsg(HWND window) nothrow @nogc @system
 		return FALSE;
 
 	//SendMessageA(window, WM_MOUSEMOVE, 15073680, 1); // Not working
-	WPARAM xy = (380 | (230 << 16));
-	if(SetCursorPos(rect.left + 380, rect.top + 25 + 230) == TRUE)
+	WPARAM xy = (400 | (230 << 16));
+	if(SetCursorPos(rect.left + 400, rect.top + 25 + 230) == TRUE)
 		SendMessageA(window, WM_LBUTTONDOWN, xy, 1);
-	
+
 	return TRUE;
 }
 
