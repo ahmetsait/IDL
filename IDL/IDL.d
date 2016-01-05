@@ -864,6 +864,8 @@ export extern(C) int InstantLoad(
 				{
 					File objLog = File("obj.log", "wb");
 					scope(exit) objLog.close();
+					File objUnknownLog = File("obj_unknown.log", "wb");
+					scope(exit) objUnknownLog.close();
 				}
 
 				SYSTEM_INFO sysInfo;
@@ -886,10 +888,10 @@ export extern(C) int InstantLoad(
 							"\r\ndatId=", datIndex));
 				debug
 				{
-					objLog.writeln("itr_x: ", RDataFile.frames[0].itr_x,
-						"  itr_y: ", RDataFile.frames[0].itr_y,
-						"  itr_w: ", RDataFile.frames[0].itr_w,
-						"  itr_h: ", RDataFile.frames[0].itr_h, "\n\n\n");
+					{
+						objUnknownLog.writeln(RDataFile.weapon_strength_list);
+						objUnknownLog.writeln(RDataFile.entry_names);
+					}
 				}
 
 				//start over cleanly
@@ -904,11 +906,20 @@ export extern(C) int InstantLoad(
 				DataFile.type = objType;
 
 				DataFile.unkwn1 = RDataFile.unkwn1;
-				DataFile.unkwn3 = RDataFile.unkwn3;
-				DataFile.unkwn4 = RDataFile.unkwn4;
 				//static arrays are value types:
 				DataFile.unkwn2 = RDataFile.unkwn2;
+				DataFile.unkwn3 = RDataFile.unkwn3;
+				DataFile.unkwn4 = RDataFile.unkwn4;
 				DataFile.unkwn5 = RDataFile.unkwn5;
+				DataFile.unkwn6 = RDataFile.unkwn6;
+				DataFile.unkwn7 = RDataFile.unkwn7;
+
+				foreach(i, ref entry; DataFile.weapon_strength_list)
+				{
+					entry.unkwn1 = RDataFile.weapon_strength_list[i].unkwn1;
+					entry.unkwn2 = RDataFile.weapon_strength_list[i].unkwn2;
+					entry.unkwn3 = RDataFile.weapon_strength_list[i].unkwn3;
+				}
 				
 				DataFile.pic_count = RDataFile.pic_count;
 				DataFile.pic_bmps = RDataFile.pic_bmps;
@@ -1034,6 +1045,81 @@ export extern(C) int InstantLoad(
 											//ignore
 											break;
 									}
+								}
+							}
+							break;
+						case "<weapon_strength_list>":
+							state = DataState.weapon_strength_list;
+							ptrdiff_t entryi = -1;
+						Lwloop:
+							for(i++; i < tokens.length; i++)
+							{
+								switch(tokens[i].str)
+								{
+									case "entry:":
+										state = DataState.entry;
+										entryi++;
+										if(entryi >= DataFile.weapon_strength_list.length)
+											throw new Exception("More than 4 weapon strength entry is overflow");
+										i++; //jump over the entry index cuz I think it's not used (ie: "entry: 2 jump")
+										{
+											string n = utf.toUTF8(tokens[++i].str);
+											if(n.length >= DataFile.entry_names[entryi].length)
+												throw new Exception(format("length %d for entry name is overflow, it should be less than %d\r\n%s\r\nline: %d; col: %d", n.length, DataFile.entry_names[entryi].length, n, tokens[i].line, tokens[i].col));
+											{
+												size_t j;
+												for(j = 0; j < n.length; j++)
+													DataFile.entry_names[entryi][j] = n[j];
+												DataFile.entry_names[entryi][j] = '\0';
+											}
+										}
+										break;
+									case "dvx:":
+										if(entryi < 0)
+											continue Lwloop;
+										DataFile.weapon_strength_list[entryi].dvx = tokens[++i].str.to!int;
+										break;
+									case "dvy:":
+										if(entryi < 0)
+											continue Lwloop;
+										DataFile.weapon_strength_list[entryi].dvy = tokens[++i].str.to!int;
+										break;
+									case "arest:":
+										if(entryi < 0)
+											continue Lwloop;
+										DataFile.weapon_strength_list[entryi].arest = tokens[++i].str.to!int;
+										break;
+									case "vrest:":
+										if(entryi < 0)
+											continue Lwloop;
+										DataFile.weapon_strength_list[entryi].vrest = tokens[++i].str.to!int;
+										break;
+									case "bdefend:":
+										if(entryi < 0)
+											continue Lwloop;
+										DataFile.weapon_strength_list[entryi].bdefend = tokens[++i].str.to!int;
+										break;
+									case "effect:":
+										if(entryi < 0)
+											continue Lwloop;
+										DataFile.weapon_strength_list[entryi].effect = tokens[++i].str.to!int;
+										break;
+									case "fall:":
+										if(entryi < 0)
+											continue Lwloop;
+										DataFile.weapon_strength_list[entryi].fall = tokens[++i].str.to!int;
+										break;
+									case "injury:":
+										if(entryi < 0)
+											continue Lwloop;
+										DataFile.weapon_strength_list[entryi].injury = tokens[++i].str.to!int;
+										break;
+									case "<weapon_strength_list_end>":
+										state = DataState.none;
+										break Lwloop;
+									default:
+										//ignore
+										break;
 								}
 							}
 							break;

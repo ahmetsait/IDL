@@ -163,6 +163,22 @@ public:
     int unkwn9 = void;
 }
 
+struct sWeaponStrength
+{
+public:
+	int dvx = void;
+	int dvy = void;
+	int fall = void;
+	int arest = void;
+	int vrest = void;
+	int unkwn1 = void;
+	int effect = void;
+	int[4] unkwn2 = void;
+	int bdefend = void;
+	int injury = void;
+	ubyte[28] unkwn3 = void;
+}
+
 struct sDataFile
 {
 public:
@@ -187,7 +203,11 @@ public:
     double rowing_distance = void;
     int weapon_hp = void;
     int weapon_drop_hurt = void;
-	ubyte[1024] unkwn2 = void;
+	ubyte[124] unkwn2 = void;
+	sWeaponStrength[4] weapon_strength_list = void;
+	ubyte[410] unkwn3 = void;
+	char[30][4] entry_names = void;
+	ubyte[50] unkwn4 = void;
     int pic_count = void;
 	char[40][10] pic_bmps = void;
 	int[10] pic_index = void;
@@ -197,11 +217,11 @@ public:
 	int[10] pic_col = void;
 	int id = void;
     int type = void;
-	int unkwn3 = void;
-    char[40] small_bmp = void; /// I believe at least some of this has to do with small image
-	int unkwn4 = void;
-    char[40] face_bmp = void; /// I believe at least some of this has to do with small image
-	int[20] unkwn5 = void;
+	int unkwn5 = void;
+    char[40] small_bmp = void;
+	int unkwn6 = void;
+    char[40] face_bmp = void;
+	int[20] unkwn7 = void;
 	sFrame[400] frames = void;
     char[12] name = void; /// not actually certain that the length is 12, seems like voodoo magic
 }
