@@ -289,7 +289,7 @@ public void* getStagesAddr(HANDLE hProc) @system
 	if(ReadProcessMemory(hProc, sGameAddr + sGame.files.offsetof, &addr, size_t.sizeof, null) == FALSE)
 		throw new Exception("Could not read process memory: sGamePoint + sGame.files.offsetof");
 	if(addr == null)
-		throw new Exception("Could not read process memory: 'files' is null");
+		throw new Exception("Could not read process memory: LF2 is not started");
 	addr += sFileManager.stages.offsetof;
 	return addr;
 }
@@ -300,7 +300,7 @@ public void* getAddrOfObj(HANDLE hProc, int objIndex) @system
 	if(ReadProcessMemory(hProc, sGameAddr + sGame.files.offsetof, &addr, size_t.sizeof, null) == FALSE)
 		throw new Exception("Could not read process memory: sGamePoint + sGame.files.offsetof");
 	if(addr == null)
-		throw new Exception("Could not read process memory: 'files' is null");
+		throw new Exception("Could not read process memory: LF2 is not started");
 	if(ReadProcessMemory(hProc, addr + sFileManager.datas.offsetof + objIndex * size_t.sizeof, &addr, size_t.sizeof, null) == FALSE)
 		throw new Exception("Could not read process memory: objIndex=" ~ objIndex.to!string);
 	return addr;
@@ -312,7 +312,7 @@ public void* getBackgroundsAddr(HANDLE hProc) @system
 	if(ReadProcessMemory(hProc, sGameAddr + sGame.files.offsetof, &addr, size_t.sizeof, null) == FALSE)
 		throw new Exception("Could not read process memory: sGamePoint + sGame.files.offsetof");
 	if(addr == null)
-		throw new Exception("Could not read process memory: 'files' is null");
+		throw new Exception("Could not read process memory: LF2 is not started");
 	addr += sFileManager.backgrounds.offsetof;
 	return addr;
 }
@@ -729,12 +729,17 @@ export extern(C) int InstantLoad(
 													phase.bound = tokens[++i].str.to!int;
 													break;
 												case "music:":
-													string m = utf.toUTF8(tokens[++i].str);
 													{
-														size_t j;
-														for(j = 0; j < m.length && j < 52; j++)
-															phase.music[j] = m[j];
-														phase.music[j] = '\0';
+														string m = utf.toUTF8(tokens[++i].str);
+														if(m.length >= phase.music.length)
+															throw new Exception(format("path length %d for phase background music (bgm) is overflow, it must be less than %d\r\n%s\r\nline: %d; col: %d", m.length, phase.music.length, m, tokens[i].line, tokens[i].col));
+														{
+															size_t j;
+															for(j = 0; j < m.length; j++)
+																phase.music[j] = m[j];
+															phase.music[j] = '\0';
+														}
+														break;
 													}
 													break;
 												case "id:":
@@ -950,14 +955,18 @@ export extern(C) int InstantLoad(
 									switch(tokens[i].str)
 									{
 										case "name:":
+										{
 											string n = utf.toUTF8(tokens[++i].str);
+											if(n.length >= DataFile.name.length)
+												throw new Exception(format("length %d for name is overflow, it must be less than %d\r\n%s\r\nline: %d; col: %d", n.length, DataFile.name.length, n, tokens[i].line, tokens[i].col));
 											{
 												size_t j;
-												for(j = 0; j < n.length && j < 12; j++)
+												for(j = 0; j < n.length; j++)
 													DataFile.name[j] = n[j];
 												DataFile.name[j] = '\0';
 											}
 											break;
+										}
 										case "walking_frame_rate":
 											DataFile.walking_frame_rate = tokens[++i].str.to!int;
 											break;
@@ -1031,12 +1040,16 @@ export extern(C) int InstantLoad(
 						case "<frame>":
 							state = DataState.frame;
 							int frameId = tokens[++i].str.to!int;
-							string buf = utf.toUTF8(tokens[++i].str);
 							{
-								size_t j;
-								for(j = 0; j < buf.length && j < 20; j++)
-									DataFile.frames[frameId].fname[j] = buf[j];
-								DataFile.frames[frameId].fname[j] = '\0';
+								string c = utf.toUTF8(tokens[++i].str);
+								if(c.length >= DataFile.frames[frameId].fname.length)
+									throw new Exception(format("length %d for frame caption is overflow, it should be less than %d\r\n%s\r\nline: %d; col: %d", c.length, DataFile.frames[frameId].fname.length, c, tokens[i].line, tokens[i].col));
+								{
+									size_t j;
+									for(j = 0; j < c.length; j++)
+										DataFile.frames[frameId].fname[j] = c[j];
+									DataFile.frames[frameId].fname[j] = '\0';
+								}
 							}
 							sBdy[] bdys = new sBdy[0];
 							sItr[] itrs = new sItr[0];
