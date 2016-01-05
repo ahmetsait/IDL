@@ -826,9 +826,9 @@ export extern(C) int InstantLoad(
 											throw new Exception("Stage id could not be received");
 										int m = stageId;
 										{
-											for(size_t n = 0; n < 100; ++n)
+											for(size_t n = 0; n < stage.phases.length; ++n)
 											{
-												for(size_t k = 0; k < 60; ++k)
+												for(size_t k = 0; k < stage.phases[n].spawns.length; ++k)
 												{
 													// because static arrays are value types muhahahaaa:
 													stage.phases[n].spawns[k].unkwn1 = stages[m].phases[n].spawns[k].unkwn1;
@@ -930,7 +930,7 @@ export extern(C) int InstantLoad(
 				DataFile.small_bmp = RDataFile.small_bmp;
 				DataFile.face_bmp = RDataFile.face_bmp;
 				
-				for(int i = 0; i < 400; i++)
+				for(int i = 0; i < DataFile.frames.length; i++)
 				{
 					DataFile.frames[i].sound = RDataFile.frames[i].sound;
 					
