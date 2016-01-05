@@ -458,11 +458,10 @@ export extern(C) int ReadDataTxt(
 	return 0;
 }
 
-/// Loads decrypted data to LF2's memory using Read/WriteProcessMemory WINAPI functions. Care should be taken to
+/// Loads decrypted data to LF2's memory using Read/WriteProcessMemory WINAPI functions. Care should be taken to 
 /// first call SuspendThreadList on the target process to avoid data races and possible crashes.
-/// It's not possible to load images and sounds, bgm works in stages. Loading weapon_strength_list entries are 
-/// currently not supported due to data sequences being not known at the moment. It needs some more 
-/// reverse engineering of LF2. Background loading is not yet implemented. Other than that, this is pure magic.
+/// It's not possible to load images and sounds for objects. layer bitmaps are supported and bgm works in stages.
+/// Other than that, this is pure magic.
 export extern(C) int InstantLoad(
 	char* data, int length, 
 	int procId, 
