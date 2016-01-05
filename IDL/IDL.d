@@ -484,8 +484,137 @@ export extern(C) int InstantLoad(
 			{
 				void* addr = getAddrOfBackground(hProc, datIndex);
 
-				throw new Exception("Background loading is not implemented");
-				//TODO: support background
+				debug(LogFile)
+				{
+					File bgLog = File("bg.log", "wb");
+					scope(exit) bgLog.close();
+					File rbgLog = File("rbg.log", "wb");
+					scope(exit) rbgLog.close();
+				}
+
+				sBackground rbg = void;
+
+				if(ReadProcessMemory(hProc, addr, &rbg, sBackground.sizeof, null) == FALSE)
+					throw new Exception("Could not read process memory: rbg");
+
+				debug(LogFile) rbgLog.write(rbg);
+
+				sBackground bg = void;
+				//fill up with zeros
+				memset(&bg, 0, sBackground.sizeof);
+
+				bg.unkwn = rbg.unkwn;
+
+				DataState state = DataState.none;
+				ptrdiff_t layeri = -1;
+			Lbloop1:
+				for(size_t i = 0; i < tokens.length; i++)
+				{
+				Lbswitch1:
+					switch(tokens[i].str)
+					{
+						case "name:":
+						{
+							string n = utf.toUTF8(tokens[++i].str);
+							if(n.length >= bg.name.length)
+								throw new Exception(format("length %d for name is overflow, it must be less than %d\r\n%s\r\nline: %d; col: %d", n.length, bg.name.length, n, tokens[i].line, tokens[i].col));
+							{
+								size_t j;
+								for(j = 0; j < n.length; j++)
+									bg.name[j] = n[j] == '_' ? ' ' : n[j];
+								bg.name[j] = '\0';
+							}
+							break;
+						}
+						case "width:":
+							bg.bg_width = tokens[++i].str.to!int;
+							break;
+						case "zboundary:":
+							bg.zboundary1 = tokens[++i].str.to!int;
+							bg.zboundary2 = tokens[++i].str.to!int;
+							break;
+						case "shadow:":
+						{
+							string s = utf.toUTF8(tokens[++i].str);
+							if(s.length >= bg.shadow_bmp.length)
+								throw new Exception(format("path length %d for shadow is overflow, it must be less than %d\r\n%s\r\nline: %d; col: %d", s.length, bg.shadow_bmp.length, s, tokens[i].line, tokens[i].col));
+							{
+								size_t j;
+								for(j = 0; j < s.length && j < bg.shadow_bmp.length - 1; j++)
+									bg.shadow_bmp[j] = s[j];
+								bg.shadow_bmp[j] = '\0';
+							}
+							break;
+						}
+						case "shadowsize:":
+							bg.shadowsize1 = tokens[++i].str.to!int;
+							bg.shadowsize2 = tokens[++i].str.to!int;
+							break;
+						case "layer:":
+							layeri++;
+							if(layeri >= rbg.layer_count || layeri >= sBackground.layer_bmps.length)
+								break;
+							{
+								string m = utf.toUTF8(tokens[++i].str);
+								{
+									size_t j;
+									for(j = 0; j < m.length; j++)
+										bg.layer_bmps[layeri][j] = m[j];
+									bg.layer_bmps[layeri][j] = '\0';
+								}
+							}
+							state = DataState.layer;
+						Lbloop2:
+							for(i++; i < tokens.length; i++)
+							{
+							Lbswitch2:
+								switch(tokens[i].str)
+								{
+									case "transparency:":
+										bg.transparency[layeri] = tokens[++i].str.to!int;
+										break;
+									case "x:":
+										bg.layer_x[layeri] = tokens[++i].str.to!int;
+										break;
+									case "y:":
+										bg.layer_y[layeri] = tokens[++i].str.to!int;
+										break;
+									case "width:":
+										bg.layer_width[layeri] = tokens[++i].str.to!int;
+										break;
+									case "height:":
+										bg.layer_height[layeri] = tokens[++i].str.to!int;
+										break;
+									case "loop:":
+										bg.layer_loop[layeri] = tokens[++i].str.to!int;
+										break;
+									case "cc:":
+										bg.layer_cc[layeri] = tokens[++i].str.to!int;
+										break;
+									case "c1:":
+										bg.layer_c1[layeri] = tokens[++i].str.to!int;
+										break;
+									case "c2:":
+										bg.layer_c2[layeri] = tokens[++i].str.to!int;
+										break;
+									case "layer_end":
+										bg.layer_count = layeri + 1;
+										state = DataState.none;
+										break Lbloop2;
+									default:
+										//ignore
+										break;
+								}
+							}
+							break;
+						default:
+							//ignore
+							break;
+					}
+				}
+				debug(LogFile) bgLog.write(bg);
+				if(WriteProcessMemory(hProc, addr, &bg, sBackground.sizeof, null) == FALSE)
+					throw new Exception("Could not write background to process memory");
 			}
 			else if(dataType == DataType.Stage)
 			{

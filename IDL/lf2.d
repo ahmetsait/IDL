@@ -413,22 +413,26 @@ struct sBackground
 {
 public:
     int bg_width = void; //0x0
-    int bg_zwidth1 = void; //0x4
-    int bg_zwidth2 = void; // 0x8
+    int zboundary1 = void; //0x4
+	int zboundary2 = void; // 0x8
     int perspective1 = void; //0xC
     int perspective2 = void; //0x10
-    int shadow1 = void; //0x14
-    int shadow2 = void; //0x18
+    int shadowsize1 = void; //0x14
+    int shadowsize2 = void; //0x18
     int layer_count = void; //0x1c
     char[30][30] layer_bmps = void; //0x20
-    char[30] shadow_bmp = void; //0x3a4
-    char[30] name = void; //0x3c2
+    char[40] shadow_bmp = void; //0x3a4
+    char[32] name = void;
     int[30] transparency = void; //0x3e0
     int[30] layer_width = void; // 0x458
     int[30] layer_x = void; // 0x4d0
     int[30] layer_y = void; // 0x548
     int[30] layer_height = void; // 0x5c0
-	ubyte[856] unkwn1 = void;
+	int[30] layer_loop = void;
+	int[30] layer_c1 = void;
+	int[30] layer_c2 = void;
+	int[30] layer_cc = void;
+	ubyte[364] unkwn = void;
 }
 
 struct sFileManager
