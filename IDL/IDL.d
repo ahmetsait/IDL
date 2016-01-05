@@ -120,10 +120,18 @@ enum TokenState : ubyte
 	comment
 }
 
+enum TokenType : ubyte
+{
+	normal,
+	xml,
+	property,
+}
+
 struct Token(S) if(isSomeString!S)
 {
 	S str;
 	size_t line, col;
+	TokenType type;
 
 	string toString()
 	{
@@ -193,7 +201,7 @@ Lforeach:
 				}
 				else if(tokenEnds[0] == ch) // >
 				{
-					slices ~= Token!S(data[tokenStart .. i + 1], tokenLine, tokenCol);
+					slices ~= Token!S(data[tokenStart .. i + 1], tokenLine, tokenCol, TokenType.xml);
 					state = TokenState.none;
 				}
 				else if(tokenEnds[1] == ch) // :
@@ -219,7 +227,7 @@ Lforeach:
 				}
 				else if(tokenEnds.contains(ch)) // > :
 				{
-					slices ~= Token!S(data[tokenStart .. i + 1], tokenLine, tokenCol);
+					slices ~= Token!S(data[tokenStart .. i + 1], tokenLine, tokenCol, TokenType.property);
 					state = TokenState.none;
 				}
 				else if(ch == lineCommentChar && !includeComments) // #
