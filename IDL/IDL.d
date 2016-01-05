@@ -225,7 +225,11 @@ Lforeach:
 					state = TokenState.xml;
 					tokenStart = i;
 				}
-				else if(tokenEnds.contains(ch)) // > :
+				else if(ch == tokenEnds[0]) // >
+				{
+					throw new Exception(format("Unexpected token ending delimeter: '%c' in line: %d; at col: %d", ch, line, col));
+				}
+				else if(ch == tokenEnds[1]) // :
 				{
 					slices ~= Token!S(data[tokenStart .. i + 1], tokenLine, tokenCol, TokenType.property);
 					state = TokenState.none;
