@@ -479,7 +479,7 @@ export extern(C) int InstantLoad(
 			Token!(typeof(dat))[] tokens;
 			try
 			{
-				tokens = parseData(dat, true);
+				tokens = parseData(dat, dataType == DataType.Stage); //parse comments in stages for LF2 compatibility
 			}
 			catch(Exception ex)
 			{
