@@ -522,15 +522,8 @@ export extern(C) int InstantLoad(
 		{
 			auto dat = data[0 .. length];
 			Token!(typeof(dat))[] tokens;
-			try
-			{
-				tokens = parseData(dat, dataType == DataType.Stage); //parse comments in stages for LF2 compatibility
-			}
-			catch(Exception ex)
-			{
-				MessageBoxW(hMainWindow, utf.toUTF16z(ex.toString), "[IDL.dll] Data Parsing Error", MB_SETFOREGROUND);
-				return 1;
-			}
+
+			tokens = parseData(dat, dataType == DataType.Stage); //parse comments in stages for LF2 compatibility
 			
 			HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, procId);
 			if(hProc == INVALID_HANDLE_VALUE)
@@ -1765,6 +1758,11 @@ export extern(C) int InstantLoad(
 				if(WriteProcessMemory(hProc, addr, DataFile, sDataFile.sizeof, null) == FALSE)
 					throw new IdlException("Could not write process memory: DataFile");
 			}
+		}
+		catch(ParserException ex)
+		{
+				MessageBoxW(hMainWindow, utf.toUTF16z(ex.toString), "[IDL.dll] Data Parser Error", MB_SETFOREGROUND);
+			return 2;
 		}
 		catch(IdlException ex)
 		{
