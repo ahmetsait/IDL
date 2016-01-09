@@ -611,7 +611,7 @@ export extern(C) int InstantLoad(
 								throw new IdlException(format("Path length %d for shadow is overflow, it must be less than %d: \"%s\" in line: %d at col: %d", s.length, bg.shadow_bmp.length, s, tokens[i].line, tokens[i].col));
 							{
 								size_t j;
-								for(j = 0; j < s.length && j < bg.shadow_bmp.length - 1; j++)
+								for(j = 0; j < s.length; j++)
 									bg.shadow_bmp[j] = s[j];
 								bg.shadow_bmp[j] = '\0';
 							}
