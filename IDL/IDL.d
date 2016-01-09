@@ -134,6 +134,7 @@ struct Token(S) if(isSomeString!S)
 	S str;
 	size_t line, col;
 	TokenType type;
+	bool commentic;
 
 	string toString()
 	{
@@ -141,8 +142,8 @@ struct Token(S) if(isSomeString!S)
 	}
 }
 
-const string tokenHeads = ['<'], tokenEnds = ['>', ':'], tokenDelims = [' ', '\t', '\n', '\r'], 
-	lineEnd = ['\n', '\r'];
+const string tokenHeads = ['<'], tokenEnds = ['>', ':'], tokenDelims = [' ', '\t'], 
+	lineEnds = ['\n', '\r'];
 enum char lineCommentChar = '#';
 
 class ParserException : Exception
@@ -164,6 +165,7 @@ public Token!S[] parseData(S)(S data, bool includeComments = false) if(isSomeStr
 	Token!S[] slices = new Token!S[0];
 	slices.reserve(data.length / 5); // Pre-allocate an aprox memory we might need
 
+	bool commentness = false;
 	TokenState state = TokenState.none;
 	size_t tokenStart = 0, tokenCol = 1, tokenLine = 1, line = 1, col = 1;
 Lforeach:
@@ -173,7 +175,12 @@ Lforeach:
 		final switch(state)
 		{
 			case TokenState.none:
-				if(tokenDelims.contains(ch))
+				if(lineEnds.contains(ch))
+				{
+					commentness = false;
+					break Lswitch;
+				}
+				else if(tokenDelims.contains(ch))
 				{
 					break Lswitch;
 				}
@@ -188,9 +195,11 @@ Lforeach:
 				{
 					throw new ParserException(format("Unexpected token ending delimeter: '%c' in line: %d; at col: %d", ch, line, col));
 				}
-				else if(ch == lineCommentChar && !includeComments) // #
+				else if(ch == lineCommentChar) // #
 				{
-				    state = TokenState.comment;
+					commentness = true;
+				    if(!includeComments)
+						state = TokenState.comment;
 				}
 				else
 				{
@@ -201,7 +210,11 @@ Lforeach:
 				}
 				break Lswitch;
 			case TokenState.xml:
-				if(tokenDelims.contains(ch))
+				if(lineEnds.contains(ch))
+				{
+					throw new ParserException(format("Unexpected line ending in line %d; at col %d", line, col));
+				}
+				else if(tokenDelims.contains(ch))
 				{
 					throw new ParserException(format("Unexpected token delimeter in line %d; at col %d", line, col));
 				}
@@ -211,28 +224,35 @@ Lforeach:
 				}
 				else if(tokenEnds[0] == ch) // >
 				{
-					slices ~= Token!S(data[tokenStart .. i + 1], tokenLine, tokenCol, TokenType.xml);
+					slices ~= Token!S(data[tokenStart .. i + 1], tokenLine, tokenCol, TokenType.xml, commentness);
 					state = TokenState.none;
 				}
 				else if(tokenEnds[1] == ch) // :
 				{
 					throw new ParserException(format("Unexpected token ending delimeter '%c' in line %d; at col %d", ch, line, col));
 				}
-				else if(ch == lineCommentChar && !includeComments) // #
+				else if(ch == lineCommentChar) // #
 				{
-				    throw new Exception(format("Unexpected comment char: '%c' in line: %d; at col: %d", ch, line, col));
+					commentness = true;
+					if(!includeComments)
 						throw new ParserException(format("Unexpected comment char '%c' in line %d; at col %d", ch, line, col));
 				}
 				break Lswitch;
 			case TokenState.token:
-				if(tokenDelims.contains(ch))
+				if(lineEnds.contains(ch))
 				{
-					slices ~= Token!S(data[tokenStart .. i], tokenLine, tokenCol);
+					slices ~= Token!S(data[tokenStart .. i], tokenLine, tokenCol, TokenType.normal, commentness);
+					state = TokenState.none;
+					commentness = false;
+				}
+				else if(tokenDelims.contains(ch))
+				{
+					slices ~= Token!S(data[tokenStart .. i], tokenLine, tokenCol, TokenType.normal, commentness);
 					state = TokenState.none;
 				}
 				else if(tokenHeads.contains(ch)) // <
 				{
-					slices ~= Token!S(data[tokenStart .. i], tokenLine, tokenCol);
+					slices ~= Token!S(data[tokenStart .. i], tokenLine, tokenCol, TokenType.normal, commentness);
 					state = TokenState.xml;
 					tokenStart = i;
 				}
@@ -242,18 +262,25 @@ Lforeach:
 				}
 				else if(ch == tokenEnds[1]) // :
 				{
-					slices ~= Token!S(data[tokenStart .. i + 1], tokenLine, tokenCol, TokenType.property);
+					slices ~= Token!S(data[tokenStart .. i + 1], tokenLine, tokenCol, TokenType.property, commentness);
 					state = TokenState.none;
 				}
-				else if(ch == lineCommentChar && !includeComments) // #
+				else if(ch == lineCommentChar) // #
 				{
-				    slices ~= Token!S(data[tokenStart .. i], tokenLine, tokenCol);
-				    state = TokenState.comment;
+					commentness = true;
+					if(!includeComments)
+					{
+						slices ~= Token!S(data[tokenStart .. i], tokenLine, tokenCol, TokenType.normal, commentness);
+						state = TokenState.comment;
+					}
 				}
 				break Lswitch;
 			case TokenState.comment:
-				if(lineEnd.contains(ch))
-				    state = TokenState.none;
+				if(lineEnds.contains(ch))
+				{
+					commentness = true;
+					state = TokenState.none;
+				}
 				break Lswitch;
 		}
 		if(ch == '\n')
@@ -267,7 +294,7 @@ Lforeach:
 	switch(state)
 	{
 		case TokenState.token:
-			slices ~= Token!S(data[tokenStart .. $], tokenLine, tokenCol);
+			slices ~= Token!S(data[tokenStart .. $], tokenLine, tokenCol, TokenType.normal, commentness);
 			break;
 		case TokenState.xml:
 			throw new ParserException(format("Reached end of file unexpectedly while parsing token \"%s\" in line %d; at col %d", data[tokenStart .. $], line, col));
