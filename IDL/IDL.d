@@ -1611,6 +1611,9 @@ export extern(C) int InstantLoad(
 												case "aaction:":
 													cp.aaction = tokens[++i].str.to!int;
 													break;
+												case "taction:":
+													cp.taction = tokens[++i].str.to!int;
+													break;
 												case "jaction:":
 													cp.jaction = tokens[++i].str.to!int;
 													break;
