@@ -325,9 +325,9 @@ public void* getStagesAddr(HANDLE hProc) @system
 {
 	void* addr = null;
 	if(ReadProcessMemory(hProc, sGameAddr + sGame.files.offsetof, &addr, size_t.sizeof, null) == FALSE)
-		throw new Exception("Could not read process memory: sGamePoint + sGame.files.offsetof");
+		throw new IdlException("Could not read process memory: sGamePoint + sGame.files.offsetof");
 	if(addr == null)
-		throw new Exception("Could not read process memory: LF2 is not started");
+		throw new IdlException("Could not read process memory: LF2 is not started");
 	addr += sFileManager.stages.offsetof;
 	return addr;
 }
@@ -336,11 +336,11 @@ public void* getAddrOfObj(HANDLE hProc, int objIndex) @system
 {
 	void* addr = null;
 	if(ReadProcessMemory(hProc, sGameAddr + sGame.files.offsetof, &addr, size_t.sizeof, null) == FALSE)
-		throw new Exception("Could not read process memory: sGamePoint + sGame.files.offsetof");
+		throw new IdlException("Could not read process memory: sGamePoint + sGame.files.offsetof");
 	if(addr == null)
-		throw new Exception("Could not read process memory: LF2 is not started");
+		throw new IdlException("Could not read process memory: LF2 is not started");
 	if(ReadProcessMemory(hProc, addr + sFileManager.datas.offsetof + objIndex * size_t.sizeof, &addr, size_t.sizeof, null) == FALSE)
-		throw new Exception("Could not read process memory: objIndex=" ~ objIndex.to!string);
+		throw new IdlException("Could not read process memory: objIndex=" ~ objIndex.to!string);
 	return addr;
 }
 
@@ -348,9 +348,9 @@ public void* getBackgroundsAddr(HANDLE hProc) @system
 {
 	void* addr = null;
 	if(ReadProcessMemory(hProc, sGameAddr + sGame.files.offsetof, &addr, size_t.sizeof, null) == FALSE)
-		throw new Exception("Could not read process memory: sGamePoint + sGame.files.offsetof");
+		throw new IdlException("Could not read process memory: sGamePoint + sGame.files.offsetof");
 	if(addr == null)
-		throw new Exception("Could not read process memory: LF2 is not started");
+		throw new IdlException("Could not read process memory: LF2 is not started");
 	addr += sFileManager.backgrounds.offsetof;
 	return addr;
 }
@@ -496,6 +496,14 @@ export extern(C) int ReadDataTxt(
 	return 0;
 }
 
+class IdlException : Exception
+{
+	this(string msg, string file = __FILE__, size_t line = __LINE__, Throwable next = null) @nogc @safe pure nothrow
+	{
+		super(msg, file, line, next);
+	}
+}
+
 /// Loads decrypted data to LF2's memory using Read/WriteProcessMemory WINAPI functions. Care should be taken to 
 /// first call SuspendThreadList on the target process to avoid data races and possible crashes.
 /// It's not possible to load images and sounds for objects. layer bitmaps are supported and bgm works in stages.
@@ -526,7 +534,7 @@ export extern(C) int InstantLoad(
 			
 			HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, procId);
 			if(hProc == INVALID_HANDLE_VALUE)
-				throw new Exception("Could not open process. Error code: " ~ GetLastError().to!string ~ "\r\nMaybe you need Administrator privileges?");
+				throw new IdlException("Could not open process. Error code: " ~ GetLastError().to!string ~ "\r\nMaybe you need Administrator privileges?");
 			scope(exit) CloseHandle(hProc);
 
 			if(dataType == DataType.Background)
@@ -544,7 +552,7 @@ export extern(C) int InstantLoad(
 				sBackground rbg = void;
 
 				if(ReadProcessMemory(hProc, addr, &rbg, sBackground.sizeof, null) == FALSE)
-					throw new Exception("Could not read process memory: rbg");
+					throw new IdlException("Could not read process memory: rbg");
 
 				debug(LogFile) rbgLog.write(rbg);
 
@@ -566,7 +574,7 @@ export extern(C) int InstantLoad(
 						{
 							string n = utf.toUTF8(tokens[++i].str);
 							if(n.length >= bg.name.length)
-								throw new Exception(format("length %d for name is overflow, it must be less than %d\r\n%s\r\nline: %d; col: %d", n.length, bg.name.length, n, tokens[i].line, tokens[i].col));
+								throw new IdlException(format("Length %d for name is overflow, it must be less than %d: \"%s\" in line: %d at col: %d", n.length, bg.name.length, n, tokens[i].line, tokens[i].col));
 							{
 								size_t j;
 								for(j = 0; j < n.length; j++)
@@ -586,7 +594,7 @@ export extern(C) int InstantLoad(
 						{
 							string s = utf.toUTF8(tokens[++i].str);
 							if(s.length >= bg.shadow_bmp.length)
-								throw new Exception(format("path length %d for shadow is overflow, it must be less than %d\r\n%s\r\nline: %d; col: %d", s.length, bg.shadow_bmp.length, s, tokens[i].line, tokens[i].col));
+								throw new IdlException(format("Path length %d for shadow is overflow, it must be less than %d: \"%s\" in line: %d at col: %d", s.length, bg.shadow_bmp.length, s, tokens[i].line, tokens[i].col));
 							{
 								size_t j;
 								for(j = 0; j < s.length && j < bg.shadow_bmp.length - 1; j++)
@@ -601,10 +609,12 @@ export extern(C) int InstantLoad(
 							break;
 						case "layer:":
 							layeri++;
-							if(layeri >= rbg.layer_count || layeri >= sBackground.layer_bmps.length)
-								break;
+							if(layeri >= sBackground.layer_bmps.length)
+								throw new IdlException(format("Layer count %d is overflow, it must be less or equal to %d", layeri + 1, bg.layer_bmps.length));
 							{
 								string m = utf.toUTF8(tokens[++i].str);
+								if(m.length >= bg.layer_bmps[layeri].length)
+									throw new IdlException(format("Layer bitmap path length %d is overflow, it must be less than %d", m.length, bg.layer_bmps[layeri].length));
 								{
 									size_t j;
 									for(j = 0; j < m.length; j++)
@@ -663,7 +673,7 @@ export extern(C) int InstantLoad(
 				}
 				debug(LogFile) bgLog.write(bg);
 				if(WriteProcessMemory(hProc, addr, &bg, sBackground.sizeof, null) == FALSE)
-					throw new Exception("Could not write background to process memory");
+					throw new IdlException("Could not write background to process memory");
 			}
 			else if(dataType == DataType.Stage)
 			{
@@ -678,11 +688,11 @@ export extern(C) int InstantLoad(
 				//allocate it cuz ReadProcessMemory won't do it for us
 				sStage[] rstages = (cast(sStage*)malloc(sStage.sizeof * 60))[0 .. 60];
 				if(!rstages)
-					throw new Exception("Could not allocate rstages: " ~ (sStage.sizeof * 60).to!string ~ " byte");
+					throw new IdlException("Could not allocate rstages: " ~ (sStage.sizeof * 60).to!string ~ " byte");
 				scope(exit) free(rstages.ptr);
 				
 				if(ReadProcessMemory(hProc, addr, rstages.ptr, (sStage.sizeof * 60), null) == FALSE)
-					throw new Exception("Could not read process memory: stages");
+					throw new IdlException("Could not read process memory: stages");
 
 				debug(LogFile)
 				{
@@ -698,7 +708,7 @@ export extern(C) int InstantLoad(
 				//start over cleanly
 				sStage[] stages = (cast(sStage*)malloc(sStage.sizeof * 60))[0 .. 60];
 				if(!stages)
-					throw new Exception("Could not allocate stages: " ~ (sStage.sizeof * 60).to!string ~ " byte");
+					throw new IdlException("Could not allocate stages: " ~ (sStage.sizeof * 60).to!string ~ " byte");
 				scope(exit) free(stages.ptr);
 				//fill up with zeros
 				memset(stages.ptr, 0, sStage.sizeof * 60);
@@ -729,7 +739,7 @@ export extern(C) int InstantLoad(
 							state = DataState.stage;
 							sStage* stage = cast(sStage*)malloc(sStage.sizeof);
 							if(stage == null)
-								throw new Exception("Could not allocate stage");
+								throw new IdlException("Could not allocate stage: Out of memory");
 							scope(exit) free(stage);
 							stage.phase_count = -1;
 							int stageId = -1;
@@ -768,7 +778,7 @@ export extern(C) int InstantLoad(
 													{
 														string m = utf.toUTF8(tokens[++i].str);
 														if(m.length >= phase.music.length)
-															throw new Exception(format("path length %d for phase background music (bgm) is overflow, it must be less than %d\r\n%s\r\nline: %d; col: %d", m.length, phase.music.length, m, tokens[i].line, tokens[i].col));
+															throw new IdlException(format("Path length %d for phase background music (bgm) is overflow, it must be less than %d: \"%s\" in line: %d at col: %d", m.length, phase.music.length, m, tokens[i].line, tokens[i].col));
 														{
 															size_t j;
 															for(j = 0; j < m.length; j++)
@@ -864,7 +874,7 @@ export extern(C) int InstantLoad(
 										goto case;
 									case "<stage_end>":
 										if(stageId < 0)
-											throw new Exception("Stage id could not be received");
+											throw new IdlException("Stage id could not be received");
 										int m = stageId;
 										{
 											for(size_t n = 0; n < stage.phases.length; ++n)
@@ -893,7 +903,7 @@ export extern(C) int InstantLoad(
 					}
 				}
 				if(WriteProcessMemory(hProc, addr, stages.ptr, sStage.sizeof * 60, null) == FALSE)
-					throw new Exception("Could not write stages to process memory");
+					throw new IdlException("Could not write stages to process memory");
 			}
 			else if(dataType == DataType.Object)
 			{
@@ -919,11 +929,11 @@ export extern(C) int InstantLoad(
 				//allocate it cuz ReadProcessMemory won't do it for us
 				sDataFile* RDataFile = cast(sDataFile*)malloc(sDataFile.sizeof);
 				if(RDataFile == null)
-					throw new Exception("Could not allocate RDataFile: " ~ sDataFile.sizeof.to!string ~ " bytes");
+					throw new IdlException("Could not allocate RDataFile: " ~ sDataFile.sizeof.to!string ~ " bytes: Out of memory");
 				scope(exit) free(RDataFile);
 
 				if(ReadProcessMemory(hProc, addr, RDataFile, sDataFile.sizeof, null) == FALSE)
-					throw new Exception(text("Could not read process memory: RDataFile\r\nAddr=", addr, 
+					throw new IdlException(text("Could not read process memory: RDataFile\r\nAddr=", addr, 
 							"\r\ndatId=", datIndex));
 
 				debug(LogFile)
@@ -937,7 +947,7 @@ export extern(C) int InstantLoad(
 				//start over cleanly
 				sDataFile* DataFile = cast(sDataFile*)malloc(sDataFile.sizeof);
 				if(DataFile == null)
-					throw new Exception("Could not allocate DataFile: " ~ sDataFile.sizeof.to!string ~ " bytes");
+					throw new IdlException("Could not allocate DataFile: " ~ sDataFile.sizeof.to!string ~ " bytes: Out of memory");
 				scope(exit) free(DataFile);
 				//fill up with zeros
 				memset(DataFile, 0, sDataFile.sizeof);
@@ -1009,7 +1019,7 @@ export extern(C) int InstantLoad(
 										{
 											string n = utf.toUTF8(tokens[++i].str);
 											if(n.length >= DataFile.name.length)
-												throw new Exception(format("length %d for name is overflow, it must be less than %d\r\n%s\r\nline: %d; col: %d", n.length, DataFile.name.length, n, tokens[i].line, tokens[i].col));
+												throw new IdlException(format("Length %d for name is overflow, it must be less than %d: \"%s\" in line: %d at col: %d", n.length, DataFile.name.length, n, tokens[i].line, tokens[i].col));
 											{
 												size_t j;
 												for(j = 0; j < n.length; j++)
@@ -1100,7 +1110,7 @@ export extern(C) int InstantLoad(
 										state = DataState.entry;
 										entryi++;
 										if(entryi >= DataFile.weapon_strength_list.length)
-											throw new Exception("More than 4 weapon strength entry is overflow");
+											throw new IdlException("More than 4 weapon strength entry is overflow");
 										i++; //jump over the entry index cuz I think it's not used (ie: "entry: 2 jump")
 										{
 											string n = utf.toUTF8(tokens[++i].str);
@@ -1642,24 +1652,24 @@ export extern(C) int InstantLoad(
 							sBdy* bdyAlloc = cast(sBdy*)VirtualAllocEx(hProc, null, sBdy.sizeof * frame.bdy_count, MEM_COMMIT, PAGE_READWRITE);
 							
 							if(bdyAlloc == null)
-								throw new Exception("Could not allocate bdy array for LF2");
+								throw new IdlException("Could not allocate bdy array for LF2");
 							
 							if(WriteProcessMemory(hProc, bdyAlloc, frame.bdys, sBdy.sizeof * frame.bdy_count, null) == FALSE)
-								throw new Exception("Could not write process memory: frame.bdys");
+								throw new IdlException("Could not write process memory: frame.bdys");
 							frame.bdys = bdyAlloc;
 						}
 						else if(RDataFile.frames[i].bdy_count < frame.bdy_count)
 						{
 							MEMORY_BASIC_INFORMATION memInfo;
 							if(VirtualQueryEx(hProc, RDataFile.frames[i].bdys, &memInfo, MEMORY_BASIC_INFORMATION.sizeof) == 0)
-								throw new Exception("Could not query process memory: bdys");
+								throw new IdlException("Could not query process memory: bdys");
 							
 							if(memInfo.RegionSize == allocBdySize)
 							{
 								if(VirtualFreeEx(hProc, RDataFile.frames[i].bdys, 0, MEM_RELEASE) == FALSE)
-									throw new Exception("Could not free process memory: bdys");
+									throw new IdlException("Could not free process memory: bdys");
 							}
-							//else throw new Exception(format("memInfo.RegionSize(%d) != allocBdySize(%d)", memInfo.RegionSize, allocBdySize));
+							//else throw new IdlException(format("memInfo.RegionSize(%d) != allocBdySize(%d)", memInfo.RegionSize, allocBdySize));
 							
 							//allocate bdys for LF2
 							sBdy* bdyAlloc = cast(sBdy*)VirtualAllocEx(hProc, null, sBdy.sizeof * frame.bdy_count, MEM_COMMIT, PAGE_READWRITE);
@@ -1668,13 +1678,13 @@ export extern(C) int InstantLoad(
 								throw new Exception("Could not allocate bdy array for process memory");
 							
 							if(WriteProcessMemory(hProc, bdyAlloc, frame.bdys, sBdy.sizeof * frame.bdy_count, null) == FALSE)
-								throw new Exception("Could not write process memory: frame.bdys");
+								throw new IdlException("Could not write process memory: frame.bdys");
 							frame.bdys = bdyAlloc;
 						}
 						else
 						{
 							if(WriteProcessMemory(hProc, RDataFile.frames[i].bdys, frame.bdys, sBdy.sizeof * frame.bdy_count, null) == FALSE)
-								throw new Exception("Could not write process memory: frame.bdys");
+								throw new IdlException("Could not write process memory: frame.bdys");
 							frame.bdys = RDataFile.frames[i].bdys;
 						}
 					}
@@ -1682,14 +1692,14 @@ export extern(C) int InstantLoad(
 					{
 						MEMORY_BASIC_INFORMATION memInfo;
 						if(VirtualQueryEx(hProc, RDataFile.frames[i].bdys, &memInfo, MEMORY_BASIC_INFORMATION.sizeof) == 0)
-							throw new Exception("Could not query process memory: bdys");
+							throw new IdlException("Could not query process memory: bdys");
 						
 						if(memInfo.RegionSize == allocBdySize)
 						{
 							if(VirtualFreeEx(hProc, RDataFile.frames[i].bdys, 0, MEM_RELEASE) == FALSE)
-								throw new Exception("Could not free process memory: bdys");
+								throw new IdlException("Could not free process memory: bdys");
 						}
-						//else throw new Exception(format("memInfo.RegionSize(%d) != allocBdySize(%d)", memInfo.RegionSize, allocBdySize));
+						//else throw new IdlException(format("memInfo.RegionSize(%d) != allocBdySize(%d)", memInfo.RegionSize, allocBdySize));
 					}
 
 					if(frame.itr_count > 0)
@@ -1701,39 +1711,39 @@ export extern(C) int InstantLoad(
 							sItr* itrAlloc = cast(sItr*)VirtualAllocEx(hProc, null, sItr.sizeof * frame.itr_count, MEM_COMMIT, PAGE_READWRITE);
 							
 							if(itrAlloc == null)
-								throw new Exception("Could not allocate itr array for LF2");
+								throw new IdlException("Could not allocate itr array for LF2");
 							
 							if(WriteProcessMemory(hProc, itrAlloc, frame.itrs, sItr.sizeof * frame.itr_count, null) == FALSE)
-								throw new Exception("Could not write process memory: frame.itrs");
+								throw new IdlException("Could not write process memory: frame.itrs");
 							frame.itrs = itrAlloc;
 						}
 						else if(RDataFile.frames[i].itr_count < frame.itr_count)
 						{
 							MEMORY_BASIC_INFORMATION memInfo;
 							if(VirtualQueryEx(hProc, RDataFile.frames[i].itrs, &memInfo, MEMORY_BASIC_INFORMATION.sizeof) == 0)
-								throw new Exception("Could not query process memory: itrs");
+								throw new IdlException("Could not query process memory: itrs");
 							
 							if(memInfo.RegionSize == allocItrSize)
 							{
 								if(VirtualFreeEx(hProc, RDataFile.frames[i].itrs, 0, MEM_RELEASE) == FALSE)
-									throw new Exception("Could not free process memory: itrs");
+									throw new IdlException("Could not free process memory: itrs");
 							}
-							//else throw new Exception(format("memInfo.RegionSize(%d) != allocItrSize(%d)", memInfo.RegionSize, allocItrSize));
+							//else throw new IdlException(format("memInfo.RegionSize(%d) != allocItrSize(%d)", memInfo.RegionSize, allocItrSize));
 							
 							//allocate itrs for LF2
 							sItr* itrAlloc = cast(sItr*)VirtualAllocEx(hProc, null, sItr.sizeof * frame.itr_count, MEM_COMMIT, PAGE_READWRITE);
 							
 							if(itrAlloc == null)
-								throw new Exception("Could not allocate itr array for LF2");
+								throw new IdlException("Could not allocate itr array for LF2");
 							
 							if(WriteProcessMemory(hProc, itrAlloc, frame.itrs, sItr.sizeof * frame.itr_count, null) == FALSE)
-								throw new Exception("Could not write process memory: frame.itrs");
+								throw new IdlException("Could not write process memory: frame.itrs");
 							frame.itrs = itrAlloc;
 						}
 						else
 						{
 							if(WriteProcessMemory(hProc, RDataFile.frames[i].itrs, frame.itrs, sItr.sizeof * frame.itr_count, null) == FALSE)
-								throw new Exception("Could not write process memory: DataFile");
+								throw new IdlException("Could not write process memory: DataFile");
 							frame.itrs = RDataFile.frames[i].itrs;
 						}
 					}
@@ -1741,20 +1751,25 @@ export extern(C) int InstantLoad(
 					{
 						MEMORY_BASIC_INFORMATION memInfo;
 						if(VirtualQueryEx(hProc, RDataFile.frames[i].itrs, &memInfo, MEMORY_BASIC_INFORMATION.sizeof) == 0)
-							throw new Exception("Could not query process memory: itrs");
+							throw new IdlException("Could not query process memory: itrs");
 						
 						if(memInfo.RegionSize == allocItrSize)
 						{
 							if(VirtualFreeEx(hProc, RDataFile.frames[i].itrs, 0, MEM_RELEASE) == FALSE)
-								throw new Exception("Could not free process memory: itrs");
+								throw new IdlException("Could not free process memory: itrs");
 						}
-						//else throw new Exception(format("memInfo.RegionSize(%d) != allocItrSize(%d)", memInfo.RegionSize, allocItrSize));
+						//else throw new IdlException(format("memInfo.RegionSize(%d) != allocItrSize(%d)", memInfo.RegionSize, allocItrSize));
 					}
 				}
 
 				if(WriteProcessMemory(hProc, addr, DataFile, sDataFile.sizeof, null) == FALSE)
-					throw new Exception("Could not write process memory: DataFile");
+					throw new IdlException("Could not write process memory: DataFile");
 			}
+		}
+		catch(IdlException ex)
+		{
+				MessageBoxW(hMainWindow, utf.toUTF16z(ex.toString), "[IDL.dll] Data Loading Error", MB_SETFOREGROUND);
+			return 2;
 		}
 		catch(Exception ex)
 		{
