@@ -145,6 +145,14 @@ const string tokenHeads = ['<'], tokenEnds = ['>', ':'], tokenDelims = [' ', '\t
 	lineEnd = ['\n', '\r'];
 enum char lineCommentChar = '#';
 
+class ParserException : Exception
+{
+	this(string msg, string file = __FILE__, size_t line = __LINE__, Throwable next = null) @nogc @safe pure nothrow
+	{
+		super(msg, file, line, next);
+	}
+}
+
 /// This function tokenizes LF2 data and returns a slice-array of strings. Returned slices point to the given string.
 public Token!S[] parseData(S)(S data, bool includeComments = false) if(isSomeString!S)
 {
@@ -178,7 +186,7 @@ Lforeach:
 				}
 				else if(tokenEnds.contains(ch)) // > :
 				{
-					throw new Exception(format("Unexpected token ending delimeter: '%c' in line: %d; at col: %d", ch, line, col));
+					throw new ParserException(format("Unexpected token ending delimeter: '%c' in line: %d; at col: %d", ch, line, col));
 				}
 				else if(ch == lineCommentChar && !includeComments) // #
 				{
@@ -195,11 +203,11 @@ Lforeach:
 			case TokenState.xml:
 				if(tokenDelims.contains(ch))
 				{
-					throw new Exception(format("Unexpected token delimeter in line: %d; at col: %d", line, col));
+					throw new ParserException(format("Unexpected token delimeter in line %d; at col %d", line, col));
 				}
 				else if(tokenHeads.contains(ch)) // <
 				{
-					throw new Exception(format("Unexpected token beginning delimeter: '%c' in line: %d; at col: %d", ch, line, col));
+					throw new ParserException(format("Unexpected token beginning delimeter '%c' in line %d; at col %d", ch, line, col));
 				}
 				else if(tokenEnds[0] == ch) // >
 				{
@@ -208,11 +216,12 @@ Lforeach:
 				}
 				else if(tokenEnds[1] == ch) // :
 				{
-					throw new Exception(format("Unexpected token ending delimeter: '%c' in line: %d; at col: %d", ch, line, col));
+					throw new ParserException(format("Unexpected token ending delimeter '%c' in line %d; at col %d", ch, line, col));
 				}
 				else if(ch == lineCommentChar && !includeComments) // #
 				{
 				    throw new Exception(format("Unexpected comment char: '%c' in line: %d; at col: %d", ch, line, col));
+						throw new ParserException(format("Unexpected comment char '%c' in line %d; at col %d", ch, line, col));
 				}
 				break Lswitch;
 			case TokenState.token:
@@ -229,7 +238,7 @@ Lforeach:
 				}
 				else if(ch == tokenEnds[0]) // >
 				{
-					throw new Exception(format("Unexpected token ending delimeter: '%c' in line: %d; at col: %d", ch, line, col));
+					throw new ParserException(format("Unexpected token ending delimeter '%c' in line %d; at col %d", ch, line, col));
 				}
 				else if(ch == tokenEnds[1]) // :
 				{
@@ -261,7 +270,7 @@ Lforeach:
 			slices ~= Token!S(data[tokenStart .. $], tokenLine, tokenCol);
 			break;
 		case TokenState.xml:
-			throw new Exception(format("Reached end of file unexpectedly while parsing token: \"%s\" in line: %d; at col: %d", data[tokenStart .. $], line, col));
+			throw new ParserException(format("Reached end of file unexpectedly while parsing token \"%s\" in line %d; at col %d", data[tokenStart .. $], line, col));
 		default:
 			break;
 	}
