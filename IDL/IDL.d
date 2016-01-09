@@ -95,7 +95,8 @@ export extern(C) int SuspendThreadList(int* threadIds, int length, BOOL bSuspend
 	return ret;
 }
 
-/// Sends left mouse button click message to given window handle at {X=380, Y=230} 
+/*
+/// Sends left mouse button click message to given window handle at {X=400, Y=230} 
 /// LF2 somehow does not respond to WM_LBUTTONDOWN x,y coordinates so the function 
 /// manually put cursor into the right place.
 export extern(C) BOOL SendGameStartMsg(HWND window) nothrow @nogc @system
@@ -107,10 +108,11 @@ export extern(C) BOOL SendGameStartMsg(HWND window) nothrow @nogc @system
 	//SendMessageA(window, WM_MOUSEMOVE, 15073680, 1); // Not working
 	WPARAM xy = (400 | (230 << 16));
 	if(SetCursorPos(rect.left + 400, rect.top + 25 + 230) == TRUE)
-		SendMessageA(window, WM_LBUTTONDOWN, xy, 1);
+		SendMessageA(window, WM_LBUTTONDOWN, xy, 0);
 
 	return TRUE;
 }
+*/
 
 enum TokenState : ubyte
 {
