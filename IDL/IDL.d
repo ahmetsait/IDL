@@ -504,6 +504,18 @@ class IdlException : Exception
 	}
 }
 
+enum MsgType : ubyte
+{
+	Message,
+	Error,
+	Warning
+}
+
+alias Logger = extern(Windows) void function (const(char)*, const(char)*, MsgType);
+
+const string unhandledMsg = "Unhandled token: \"%s\" in line %d at col %d",
+	warningHigh = "Warning level too high";
+
 /// Loads decrypted data to LF2's memory using Read/WriteProcessMemory WINAPI functions. Care should be taken to 
 /// first call SuspendThreadList on the target process to avoid data races and possible crashes.
 /// It's not possible to load images and sounds for objects. layer bitmaps are supported and bgm works in stages.
@@ -514,8 +526,10 @@ export extern(C) int InstantLoad(
 	DataType dataType, 
 	int datIndex, 
 	ObjectType objType, 
-	HWND hMainWindow) @system
+	HWND hMainWindow,
+	Logger logFunc) @system
 {
+	uint warn = 0;
 	try
 	{
 		try
@@ -654,13 +668,25 @@ export extern(C) int InstantLoad(
 										state = DataState.none;
 										break Lbloop2;
 									default:
-										//ignore
+										if(logFunc != null)
+										{
+											logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+											warn++;
+											if(warn >= 20)
+												throw new IdlException(format(warningHigh));
+										}
 										break;
 								}
 							}
 							break;
 						default:
-							//ignore
+							if(logFunc != null)
+							{
+								logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+								warn++;
+								if(warn >= 20)
+									throw new IdlException(format(warningHigh));
+							}
 							break;
 					}
 				}
@@ -857,12 +883,28 @@ export extern(C) int InstantLoad(
 													state = DataState.stage;
 													break Lloop3;
 												default:
-													//ignore
+													if(logFunc != null && !tokens[i].commentic)
+													{
+														auto msg = utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col));
+														logFunc(msg, null, MsgType.Warning);
+														warn++;
+														if(warn >= 20)
+															throw new IdlException(format(warningHigh));
+													}
 													break;
 											}
 										}
 										break;
 									case "<stage>":
+										if(logFunc != null)
+										{
+											auto msg = utf.toUTF8z(format("Stage recursion in line %d at col %d", 
+													tokens[i].line, tokens[i].col));
+											logFunc(msg, null, MsgType.Warning);
+											warn++;
+											if(warn >= 20)
+												throw new IdlException(format(warningHigh));
+										}
 										i--;
 										goto case;
 									case "<stage_end>":
@@ -885,13 +927,27 @@ export extern(C) int InstantLoad(
 										state = DataState.none;
 										break Lloop2;
 									default:
-										//ignore
+										if(logFunc != null && !tokens[i].commentic)
+										{
+											auto msg = utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col));
+											logFunc(msg, null, MsgType.Warning);
+											warn++;
+											if(warn >= 20)
+												throw new IdlException(format(warningHigh));
+										}
 										break;
 								}
 							}
 							break;
 						default:
-							//ignore
+							if(logFunc != null && !tokens[i].commentic)
+							{
+								auto msg = utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col));
+								logFunc(msg, null, MsgType.Warning);
+								warn++;
+								if(warn >= 20)
+									throw new IdlException(format(warningHigh));
+							}
 							break;
 					}
 				}
@@ -1021,6 +1077,12 @@ export extern(C) int InstantLoad(
 											}
 											break;
 										}
+										case "head:":
+											i++; //ignore
+											break;
+										case "small:":
+											i++; //ignore
+											break;
 										case "walking_frame_rate":
 											DataFile.walking_frame_rate = tokens[++i].str.to!int;
 											break;
@@ -1078,6 +1140,15 @@ export extern(C) int InstantLoad(
 										case "weapon_hp:":
 											DataFile.weapon_hp = tokens[++i].str.to!int;
 											break;
+										case "weapon_hit_sound:":
+											i++; //ignore
+											break;
+										case "weapon_drop_sound:":
+											i++; //ignore
+											break;
+										case "weapon_broken_sound:":
+											i++; //ignore
+											break;
 										case "weapon_drop_hurt:":
 											DataFile.weapon_drop_hurt = tokens[++i].str.to!int;
 											break;
@@ -1085,7 +1156,13 @@ export extern(C) int InstantLoad(
 											state = DataState.none;
 											break Lcloop2;
 										default:
-											//ignore
+											if(logFunc != null)
+											{
+												logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+												warn++;
+												if(warn >= 20)
+													throw new IdlException(format(warningHigh));
+											}
 											break;
 									}
 								}
@@ -1108,10 +1185,18 @@ export extern(C) int InstantLoad(
 										{
 											string n = utf.toUTF8(tokens[++i].str);
 											if(n.length >= DataFile.entry_names[entryi].length)
-												throw new Exception(format("length %d for entry name is overflow, it should be less than %d\r\n%s\r\nline: %d; col: %d", n.length, DataFile.entry_names[entryi].length, n, tokens[i].line, tokens[i].col));
+											{
+												if(logFunc != null)
+												{
+													logFunc(utf.toUTF8z(format("Length %d for entry name is overflow, it should be less than %d: \"%s\" in line: %d at col: %d", n.length, DataFile.entry_names[entryi].length, n, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+													warn++;
+													if(warn >= 20)
+														throw new IdlException(format(warningHigh));
+												}
+											}
 											{
 												size_t j;
-												for(j = 0; j < n.length; j++)
+												for(j = 0; j < n.length && j < DataFile.entry_names[entryi].length - 1; j++)
 													DataFile.entry_names[entryi][j] = n[j];
 												DataFile.entry_names[entryi][j] = '\0';
 											}
@@ -1161,7 +1246,13 @@ export extern(C) int InstantLoad(
 										state = DataState.none;
 										break Lwloop;
 									default:
-										//ignore
+										if(logFunc != null)
+										{
+											logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+											warn++;
+											if(warn >= 20)
+												throw new IdlException(format(warningHigh));
+										}
 										break;
 								}
 							}
@@ -1172,10 +1263,18 @@ export extern(C) int InstantLoad(
 							{
 								string c = utf.toUTF8(tokens[++i].str);
 								if(c.length >= DataFile.frames[frameId].fname.length)
-									throw new Exception(format("length %d for frame caption is overflow, it should be less than %d\r\n%s\r\nline: %d; col: %d", c.length, DataFile.frames[frameId].fname.length, c, tokens[i].line, tokens[i].col));
+								{
+									if(logFunc != null)
+									{
+										logFunc(utf.toUTF8z(format("Length %d for frame caption is overflow, it should be less than %d: \"%s\" in line: %d at col: %d", c.length, DataFile.frames[frameId].fname.length, c, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+										warn++;
+										if(warn >= 20)
+											throw new IdlException(format(warningHigh));
+									}
+								}
 								{
 									size_t j;
-									for(j = 0; j < c.length; j++)
+									for(j = 0; j < c.length && j < DataFile.frames[frameId].fname.length - 1; j++)
 										DataFile.frames[frameId].fname[j] = c[j];
 									DataFile.frames[frameId].fname[j] = '\0';
 								}
@@ -1250,6 +1349,9 @@ export extern(C) int InstantLoad(
 									case "mp:":
 										DataFile.frames[frameId].mp = tokens[++i].str.to!int;
 										break;
+									case "sound:":
+										i++; //ignore
+										break;
 									case "bdy:":
 										state = DataState.bdy;
 										sBdy bdy;
@@ -1279,7 +1381,13 @@ export extern(C) int InstantLoad(
 													state = DataState.frame;
 													break LcloopBdy;
 												default:
-													//ignore
+													if(logFunc != null)
+													{
+														logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+														warn++;
+														if(warn >= 20)
+															throw new IdlException(format(warningHigh));
+													}
 													break;
 											}
 										}
@@ -1348,7 +1456,13 @@ export extern(C) int InstantLoad(
 													state = DataState.frame;
 													break LcloopI;
 												default:
-													//ignore
+													if(logFunc != null)
+													{
+														logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+														warn++;
+														if(warn >= 20)
+															throw new IdlException(format(warningHigh));
+													}
 													break;
 											}
 										}
@@ -1394,7 +1508,13 @@ export extern(C) int InstantLoad(
 													state = DataState.frame;
 													break LcloopW;
 												default:
-													//ignore
+													if(logFunc != null)
+													{
+														logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+														warn++;
+														if(warn >= 20)
+															throw new IdlException(format(warningHigh));
+													}
 													break;
 											}
 										}
@@ -1437,7 +1557,13 @@ export extern(C) int InstantLoad(
 													state = DataState.frame;
 													break LcloopO;
 												default:
-													//ignore
+													if(logFunc != null)
+													{
+														logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+														warn++;
+														if(warn >= 20)
+															throw new IdlException(format(warningHigh));
+													}
 													break;
 											}
 										}
@@ -1510,7 +1636,13 @@ export extern(C) int InstantLoad(
 													state = DataState.frame;
 													break LcloopC;
 												default:
-													//ignore
+													if(logFunc != null)
+													{
+														logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+														warn++;
+														if(warn >= 20)
+															throw new IdlException(format(warningHigh));
+													}
 													break;
 											}
 										}
@@ -1535,7 +1667,13 @@ export extern(C) int InstantLoad(
 													state = DataState.frame;
 													break LcloopB;
 												default:
-													//ignore
+													if(logFunc != null)
+													{
+														logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+														warn++;
+														if(warn >= 20)
+															throw new IdlException(format(warningHigh));
+													}
 													break;
 											}
 										}
@@ -1549,13 +1687,25 @@ export extern(C) int InstantLoad(
 										state = DataState.none;
 										break Lcloop3;
 									default:
-										//ignore
+										if(logFunc != null)
+										{
+											logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+											warn++;
+											if(warn >= 20)
+												throw new IdlException(format(warningHigh));
+										}
 										break;
 								}
 							}
 							break;
 						default:
-							//ignore
+							if(logFunc != null)
+							{
+								logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+								warn++;
+								if(warn >= 20)
+									throw new IdlException(format(warningHigh));
+							}
 							break;
 					}
 				}
@@ -1668,7 +1818,7 @@ export extern(C) int InstantLoad(
 							sBdy* bdyAlloc = cast(sBdy*)VirtualAllocEx(hProc, null, sBdy.sizeof * frame.bdy_count, MEM_COMMIT, PAGE_READWRITE);
 							
 							if(bdyAlloc == null)
-								throw new Exception("Could not allocate bdy array for process memory");
+								throw new IdlException("Could not allocate bdy array for process memory");
 							
 							if(WriteProcessMemory(hProc, bdyAlloc, frame.bdys, sBdy.sizeof * frame.bdy_count, null) == FALSE)
 								throw new IdlException("Could not write process memory: frame.bdys");
@@ -1761,25 +1911,38 @@ export extern(C) int InstantLoad(
 		}
 		catch(ParserException ex)
 		{
+			if(logFunc != null)
+				logFunc(utf.toUTF8z(ex.msg), null, MsgType.Error);
+			else
 				MessageBoxW(hMainWindow, utf.toUTF16z(ex.toString), "[IDL.dll] Data Parser Error", MB_SETFOREGROUND);
 			return 2;
 		}
 		catch(IdlException ex)
 		{
+			if(logFunc != null)
+				logFunc(utf.toUTF8z(ex.msg), null, MsgType.Error);
+			else
 				MessageBoxW(hMainWindow, utf.toUTF16z(ex.toString), "[IDL.dll] Data Loading Error", MB_SETFOREGROUND);
 			return 2;
 		}
 		catch(Exception ex)
 		{
-			MessageBoxW(hMainWindow, utf.toUTF16z(ex.toString), "[IDL.dll] Data Loading Error", MB_SETFOREGROUND);
+			if(logFunc != null)
+				logFunc(utf.toUTF8z(ex.toString), utf.toUTF8z("Unhandled Error"), MsgType.Error);
+			else
+				MessageBoxW(hMainWindow, utf.toUTF16z(ex.toString), "[IDL.dll] Unhandled Error", MB_SETFOREGROUND);
 			return -1;
 		}
 		catch(Error err)
 		{
-			MessageBoxW(hMainWindow, utf.toUTF16z(err.toString), "[IDL.dll] Fatal Error", MB_SETFOREGROUND);
+			if(logFunc != null)
+				logFunc(utf.toUTF8z(err.toString), utf.toUTF8z("Fatal Error"), MsgType.Error);
+			else
+				MessageBoxW(hMainWindow, utf.toUTF16z(err.toString), "[IDL.dll] Fatal Error", MB_SETFOREGROUND);
 			return int.max;
 		}
 	}
-	catch(Throwable t) { return int.min; }
-	return 0;
+	catch(Throwable t) { return int.min + 1; }
+
+	return warn > 0 ? 1 : 0;
 }
