@@ -561,6 +561,13 @@ export extern(C) int InstantLoad(
 				if(ReadProcessMemory(hProc, addr, &rbg, sBackground.sizeof, null) == FALSE)
 					throw new IdlException("Could not read process memory: rbg");
 
+				debug(Unknown)
+				{
+					auto bgLog = File("rbg.log", "wb");
+					bgLog.writeln(rbg.unkwn);
+					bgLog.close();
+				}
+
 				debug(LogFile) rbgLog.write(rbg);
 
 				sBackground bg = void;
