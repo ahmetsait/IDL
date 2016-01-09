@@ -677,7 +677,6 @@ export extern(C) int InstantLoad(
 							// because static arrays are value types muhahahaaa:
 							stages[i].phases[j].spawns[k].unkwn1 = rstages[i].phases[j].spawns[k].unkwn1;
 							stages[i].phases[j].spawns[k].unkwn2 = rstages[i].phases[j].spawns[k].unkwn2;
-							stages[i].phases[j].spawns[k].unkwn3 = rstages[i].phases[j].spawns[k].unkwn3;
 						}
 					}
 				}
@@ -754,6 +753,11 @@ export extern(C) int InstantLoad(
 													if(spawni < 0)
 														continue Lloop3;
 													phase.spawns[spawni].x = tokens[++i].str.to!int;
+													break;
+												case "y:":
+													if(spawni < 0)
+														continue Lloop3;
+													phase.spawns[spawni].y = tokens[++i].str.to!int;
 													break;
 												case "hp:":
 													if(spawni < 0)
@@ -832,7 +836,6 @@ export extern(C) int InstantLoad(
 													// because static arrays are value types muhahahaaa:
 													stage.phases[n].spawns[k].unkwn1 = stages[m].phases[n].spawns[k].unkwn1;
 													stage.phases[n].spawns[k].unkwn2 = stages[m].phases[n].spawns[k].unkwn2;
-													stage.phases[n].spawns[k].unkwn3 = stages[m].phases[n].spawns[k].unkwn3;
 												}
 											}
 										}
