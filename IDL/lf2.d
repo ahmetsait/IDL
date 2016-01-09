@@ -331,15 +331,15 @@ public:
     int join = void;
     int join_reserve = void;
     int act = void;
-	int unkwn2 = void;
+	int y = void;
     double ratio = void;
     int role = void; /// soldier = 1, boss = 2
-	int unkwn3 = void;
+	int unkwn2 = void;
 	
 	string toString(sPhase* phase = null)
 	{
 		import std.conv : text, to;
-		return text("id: ", id, hp != 500 ? "  hp: " ~ hp.to!string : "", act != 9 ? "  act: " ~ act.to!string : "", phase != null ? (x != (phase.bound + 80) ? "  x: " ~ x.to!string : "") : "  x: " ~ x.to!string, times != 1 ? "  times: " ~ times.to!string : "", ratio != 0 ? "  ratio: " ~ ratio.to!string : "", reserve != 0 ? "  reserve: " ~ reserve.to!string : "", join != 0 ? "  join: " ~ join.to!string : "", join_reserve != 0 ? "  join_reverse: " ~ join_reserve.to!string : "", role == 1 ? "\t<soldier>" : role == 2 ? "\t<boss>" : "");
+		return text("id: ", id, hp != 500 ? "  hp: " ~ hp.to!string : "", act != 9 ? "  act: " ~ act.to!string : "", phase != null ? (x != (phase.bound + 80) ? "  x: " ~ x.to!string : "") : "  x: " ~ x.to!string, y != 0 ? "  y: " ~ y.to!string : "", times != 1 ? "  times: " ~ times.to!string : "", ratio != 0 ? "  ratio: " ~ ratio.to!string : "", reserve != 0 ? "  reserve: " ~ reserve.to!string : "", join != 0 ? "  join: " ~ join.to!string : "", join_reserve != 0 ? "  join_reverse: " ~ join_reserve.to!string : "", role == 1 ? "\t<soldier>" : role == 2 ? "\t<boss>" : "");
 	}
 }
 
@@ -452,7 +452,7 @@ public:
 	int[30] layer_c1 = void;
 	int[30] layer_c2 = void;
 	int[30] layer_cc = void;
-	ubyte[364] unkwn = void;
+	int[91] unkwn = void;
 }
 
 struct sFileManager
