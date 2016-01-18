@@ -527,7 +527,7 @@ export extern(C) int InstantLoad(
 	int datIndex, 
 	ObjectType objType, 
 	HWND hMainWindow,
-	Logger logFunc) @system
+	Logger logFunc) nothrow @system
 {
 	uint warn = 0;
 	try
