@@ -56,10 +56,12 @@ bool contains(Range, V)(Range haystack, V needle) if(isInputRange!Range)
 	return false;
 }
 
-/// Suspend a list of threads to safely read/write the process memory without causing data races.
+/// Suspend a list of threads to safely read/write the process memory without causing data races. 
 /// First parameter is a raw pointer to list of thread IDs, second is the length of it, and third is 
 /// a BOOL (alias of int) value to indicate whether threads will be suspended (1) or resumed (0).
-/// Returns TRUE (1) on success, FALSE (0) otherwise.
+/// Returns TRUE (1) on success, FALSE (0) otherwise. Note: This function modifies elements of threadIds 
+/// param according to whether it was succesfully suspended/resumed. Calling it twice with the same array 
+/// will result in a miserable failure. So, thread id array should be cloned before it's passed to this.
 export extern(C) int SuspendThreadList(int* threadIds, int length, BOOL bSuspend) nothrow @nogc @system
 {
 	bool suspend = (bSuspend == TRUE);
@@ -378,6 +380,10 @@ enum DataState : ubyte
 	layer
 }
 
+/// Reads data.txt content and sets the result to it's parameters. 
+/// First parameter is the data.txt content (NOT the path!), 
+/// second is the length of it, and so on. 
+/// hMainWindow param is passed to MessageBox WinApi function.
 export extern(C) int ReadDataTxt(
 	wchar* dataTxtFile, int length, 
 	ref ObjectData* objects, ref int objCount, 
