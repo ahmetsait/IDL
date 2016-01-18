@@ -382,117 +382,121 @@ export extern(C) int ReadDataTxt(
 	wchar* dataTxtFile, int length, 
 	ref ObjectData* objects, ref int objCount, 
 	ref BackgroundData* backgrounds, ref int bgCount, 
-	HWND hMainWindow)
+	HWND hMainWindow) nothrow
 {
 	try
 	{
-		auto dat = dataTxtFile[0 .. length];
-		Token!(typeof(dat))[] tokens;
 		try
 		{
-			tokens = parseData(dat, false);
+			auto dat = dataTxtFile[0 .. length];
+			Token!(typeof(dat))[] tokens;
+			try
+			{
+				tokens = parseData(dat, false);
+			}
+			catch(Exception ex)
+			{
+				MessageBoxW(hMainWindow, utf.toUTF16z(ex.toString), "[IDL.dll] data.txt Parsing Error", MB_SETFOREGROUND);
+				return 1;
+			}
+			
+			for(size_t i = 0; i < tokens.length; i++)
+			{
+				switch(tokens[i].str)
+				{
+					case "<object>":
+						objects = null;
+						ObjectData[] objs = new ObjectData[0];
+						objs.reserve(ObjectData.sizeof * 100); //allocate an approx memory we might need
+						size_t obji = -1;
+					Lloop1:
+						for(i++; i < tokens.length; i++)
+						{
+							switch(tokens[i].str)
+							{
+								case "id:":
+									objs ~= ObjectData();
+									obji++;
+									objs[obji].id = tokens[++i].str.to!int;
+									break;
+								case "type:":
+									if(obji < 0)
+										continue Lloop1;
+									objs[obji].type = cast(ObjectType)tokens[++i].str.to!int;
+									break;
+								case "file:":
+									if(obji < 0)
+										continue Lloop1;
+									i++;
+									objs[obji].file = cast(wchar*)malloc(wchar.sizeof * (tokens[i].str.length + 1));
+									foreach(j, ch; tokens[i].str)
+										objs[obji].file[j] = ch;
+									objs[obji].file[tokens[i].str.length] = '\0';
+									break;
+								case "<object_end>":
+									objects = cast(ObjectData*)malloc(ObjectData.sizeof * objs.length);
+									memcpy(objects, objs.ptr, objs.length * ObjectData.sizeof);
+									objCount = objs.length;
+									break Lloop1;
+								default:
+									//ignore
+									break;
+							}
+						}
+						break;
+					case "<background>":
+						backgrounds = null;
+						BackgroundData[] bgs = new BackgroundData[0];
+						bgs.reserve(BackgroundData.sizeof * 20); //allocate an approx memory we might need
+						size_t bgi = -1;
+					Lloop2:
+						for(i++; i < tokens.length; i++)
+						{
+							switch(tokens[i].str)
+							{
+								case "id:":
+									bgs ~= BackgroundData();
+									bgi++;
+									bgs[bgi].id = tokens[++i].str.to!int;
+									break;
+								case "file:":
+									if(bgi < 0)
+										continue Lloop2;
+									i++;
+									bgs[bgi].file = cast(wchar*)malloc(wchar.sizeof * (tokens[i].str.length + 1));
+									foreach(j, ch; tokens[i].str)
+										bgs[bgi].file[j] = ch;
+									bgs[bgi].file[tokens[i].str.length] = '\0';
+									break;
+								case "<background_end>":
+									backgrounds = cast(BackgroundData*)malloc(BackgroundData.sizeof * bgs.length);
+									memcpy(backgrounds, bgs.ptr, bgs.length * BackgroundData.sizeof);
+									bgCount = bgs.length;
+									break Lloop2;
+								default:
+									//ignore
+									break;
+							}
+						}
+						break;
+					default:
+						//ignore
+						break;
+				}
+			}
 		}
 		catch(Exception ex)
 		{
-			MessageBoxW(hMainWindow, utf.toUTF16z(ex.toString), "[IDL.dll] data.txt Parsing Error", MB_SETFOREGROUND);
-			return 1;
+			MessageBoxW(hMainWindow, utf.toUTF16z(ex.toString), "[IDL.dll] data.txt Reading Error", MB_SETFOREGROUND);
+			return -1;
 		}
-		
-		for(size_t i = 0; i < tokens.length; i++)
+		catch(Error err)
 		{
-			switch(tokens[i].str)
-			{
-				case "<object>":
-					objects = null;
-					ObjectData[] objs = new ObjectData[0];
-					objs.reserve(ObjectData.sizeof * 100); //allocate an approx memory we might need
-					size_t obji = -1;
-				Lloop1:
-					for(i++; i < tokens.length; i++)
-					{
-						switch(tokens[i].str)
-						{
-							case "id:":
-								objs ~= ObjectData();
-								obji++;
-								objs[obji].id = tokens[++i].str.to!int;
-								break;
-							case "type:":
-								if(obji < 0)
-									continue Lloop1;
-								objs[obji].type = cast(ObjectType)tokens[++i].str.to!int;
-								break;
-							case "file:":
-								if(obji < 0)
-									continue Lloop1;
-								i++;
-								objs[obji].file = cast(wchar*)malloc(wchar.sizeof * (tokens[i].str.length + 1));
-								foreach(j, ch; tokens[i].str)
-									objs[obji].file[j] = ch;
-								objs[obji].file[tokens[i].str.length] = '\0';
-								break;
-							case "<object_end>":
-								objects = cast(ObjectData*)malloc(ObjectData.sizeof * objs.length);
-								memcpy(objects, objs.ptr, objs.length * ObjectData.sizeof);
-								objCount = objs.length;
-								break Lloop1;
-							default:
-								//ignore
-								break;
-						}
-					}
-					break;
-				case "<background>":
-					backgrounds = null;
-					BackgroundData[] bgs = new BackgroundData[0];
-					bgs.reserve(BackgroundData.sizeof * 20); //allocate an approx memory we might need
-					size_t bgi = -1;
-				Lloop2:
-					for(i++; i < tokens.length; i++)
-					{
-						switch(tokens[i].str)
-						{
-							case "id:":
-								bgs ~= BackgroundData();
-								bgi++;
-								bgs[bgi].id = tokens[++i].str.to!int;
-								break;
-							case "file:":
-								if(bgi < 0)
-									continue Lloop2;
-								i++;
-								bgs[bgi].file = cast(wchar*)malloc(wchar.sizeof * (tokens[i].str.length + 1));
-								foreach(j, ch; tokens[i].str)
-									bgs[bgi].file[j] = ch;
-								bgs[bgi].file[tokens[i].str.length] = '\0';
-								break;
-							case "<background_end>":
-								backgrounds = cast(BackgroundData*)malloc(BackgroundData.sizeof * bgs.length);
-								memcpy(backgrounds, bgs.ptr, bgs.length * BackgroundData.sizeof);
-								bgCount = bgs.length;
-								break Lloop2;
-							default:
-								//ignore
-								break;
-						}
-					}
-					break;
-				default:
-					//ignore
-					break;
-			}
+			MessageBoxW(hMainWindow, utf.toUTF16z(err.toString), "[IDL.dll] Fatal Error", MB_SETFOREGROUND);
+			return int.max;
 		}
 	}
-	catch(Exception ex)
-	{
-		MessageBoxW(hMainWindow, utf.toUTF16z(ex.toString), "[IDL.dll] data.txt Reading Error", MB_SETFOREGROUND);
-		return -1;
-	}
-	catch(Error err)
-	{
-		MessageBoxW(hMainWindow, utf.toUTF16z(err.toString), "[IDL.dll] Fatal Error", MB_SETFOREGROUND);
-		return int.max;
-	}
+	catch { return int.min; }
 	return 0;
 }
 
