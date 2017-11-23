@@ -5,52 +5,30 @@ pragma(lib, "user32");
 import core.sys.windows.windows;
 
 import core.memory : GC;
-import core.stdc.stdlib : malloc, calloc, free;
+import core.stdc.stdlib : malloc, free;
 import core.stdc.string : memcpy, memset;
-import std.conv : to, wtext, text;
+import std.conv : to, text;
 import std.format : format;
 import std.range : isInfinite, isIterable, isInputRange;
-import std.string : startsWith;
-import std.stdio : File;
-import std.traits : isSomeString, isArray;
+import std.traits : isSomeString;
 import utf = std.utf;
 
 import lf2;
 
-/// Returns whether a value exists in the given input-range.
-/// The semantics of an input range (not checkable during compilation) are
-/// assumed to be the following ($(D r) is an object of type $(D InputRange)):
-/// $(UL $(LI $(D r.empty) returns $(D false) if there is more data
-///		available in the range.)  $(LI $(D r.front) returns the current
-///		element in the range. It may return by value or by reference. Calling
-///		$(D r.front) is allowed only if calling $(D r.empty) has, or would
-///		have, returned $(D false).) $(LI $(D r.popFront) advances to the next
-///		element in the range. Calling $(D r.popFront) is allowed only if
-///		calling $(D r.empty) has, or would have, returned $(D false).))
-bool contains(Range, V)(Range haystack, V needle) if(isInputRange!Range)
+/// Returns whether a value exists in the given finite iterable range.
+private bool contains(Range, V)(Range haystack, V needle) if(isIterable!Range && !isInfinite!Range)
 {
-	static if(isArray!Range)
+	static if(isSomeString!Range)
 	{
-		static if(isSomeString!Range)
-		{
-			foreach(element; utf.byCodeUnit(haystack))
-				if (element == needle)
-					return true;
-		}
-		else
-		{
-			foreach(element; haystack)
-				if (element == needle)
-					return true;
-		}
+		foreach(element; utf.byCodeUnit(haystack))
+			if (element == needle)
+				return true;
 	}
 	else
 	{
-		for ( ; !haystack.empty; haystack.popFront())
-		{
-			if (haystack.front == needle)
+		foreach(element; haystack)
+			if (element == needle)
 				return true;
-		}
 	}
 	return false;
 }
