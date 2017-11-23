@@ -2,6 +2,7 @@
 module idl;
 
 pragma(lib, "user32");
+pragma(lib, "ntdll");
 import core.sys.windows.windows;
 
 import core.memory : GC;
@@ -33,39 +34,40 @@ private bool contains(Range, V)(Range haystack, V needle) if(isIterable!Range &&
 	return false;
 }
 
-/// Suspend a list of threads to safely read/write the process memory without causing data races. 
-/// First parameter is a raw pointer to list of thread IDs, second is the length of it, and third is 
-/// a BOOL (alias of int) value to indicate whether threads will be suspended (1) or resumed (0).
-/// Returns TRUE (1) on success, FALSE (0) otherwise. Note: This function modifies elements of threadIds 
-/// param according to whether it was succesfully suspended/resumed. Calling it twice with the same array 
-/// will result in a miserable failure. So, thread id array should be cloned before it's passed to this.
-export extern(C) int SuspendThreadList(int* threadIds, int length, BOOL bSuspend) nothrow @nogc @system
-{
-	bool suspend = (bSuspend == TRUE);
-	int ret = 0;
-	for(size_t i = 0; i < length; i++)
-	{
-		HANDLE hThread = OpenThread(THREAD_SUSPEND_RESUME, false, threadIds[i]);
-		if(hThread != INVALID_HANDLE_VALUE)
-		{
-			if(suspend)
-			{
-				if((threadIds[i] = SuspendThread(hThread)) != 0)
-				{
-					ret = 1;
-				}
-			}
-			else
-			{
-				if((threadIds[i] = ResumeThread(hThread)) != 1)
-				{
-					ret = 1;
-				}
-			}
+alias fp_NtSuspendProcess = extern(Windows) LONG function(HANDLE processHandle) nothrow @nogc @system;
+alias fp_NtResumeProcess = extern(Windows) LONG function(HANDLE processHandle) nothrow @nogc @system;
 
-			CloseHandle(hThread);
-		}
-		else
+extern(Windows) LONG NtSuspendProcess(HANDLE processHandle) nothrow @nogc @system;
+extern(Windows) LONG NtResumeProcess(HANDLE processHandle) nothrow @nogc @system;
+
+/// Suspends a process using undocumented NtSuspendProcess NtApi function.
+/// This is more bullet proof than suspending threads of the process one by one.
+/// Params:
+/// 	processId =	The ID of the process to be suspended
+/// Returns:
+/// 	Return value of NtSuspendProcess is returned on success, -1 otherwise.
+export extern(C) LONG SuspendProcess(DWORD processId) nothrow @nogc @system
+{
+	HANDLE pHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processId);
+	if (pHandle == INVALID_HANDLE_VALUE) return -1;
+	scope(exit) CloseHandle(pHandle);
+	return NtSuspendProcess(pHandle);
+}
+
+/// Resumes a process using undocumented NtResumeProcess NtApi function.
+/// This is more bullet proof than resuming threads of the process one by one.
+/// Params:
+/// 	processId =	The ID of the process to be resumed
+/// Returns:
+/// 	Return value of NtResumeProcess is returned on success, -1 otherwise.
+export extern(C) LONG ResumeProcess(DWORD processId) nothrow @nogc @system
+{
+	HANDLE pHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processId);
+	if (pHandle == INVALID_HANDLE_VALUE) return -1;
+	scope(exit) CloseHandle(pHandle);
+	return NtResumeProcess(pHandle);
+}
+
 		{
 			threadIds[i] = ret = int.min;
 		}
