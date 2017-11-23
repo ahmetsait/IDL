@@ -125,11 +125,6 @@ export extern(C) BOOL SuspendThreadList(const(DWORD)* threadIds, int length) not
 	return TRUE;
 }
 
-/*
-/// Sends left mouse button click message to given window handle at {X=400, Y=230} 
-/// LF2 somehow does not respond to WM_LBUTTONDOWN x,y coordinates so the function 
-/// manually put cursor into the right place.
-export extern(C) BOOL SendGameStartMsg(HWND window) nothrow @nogc @system
 /// Resumes a list of threads that have been suspended.
 /// Note that this operation is not safe and can result in crash, deadlock or unstability of the process.
 /// Params:
@@ -139,17 +134,9 @@ export extern(C) BOOL SendGameStartMsg(HWND window) nothrow @nogc @system
 /// 	TRUE (1) on success, FALSE (0) otherwise.
 export extern(C) BOOL ResumeThreadList(const(DWORD)* threadIds, int length) nothrow @nogc @system
 {
-	RECT rect;
-	if(GetWindowRect(window, &rect) == FALSE)
 	scope HANDLE[] handles = (cast(HANDLE*)malloc(length * HANDLE.sizeof))[0 .. length];	// Cache handles because why not
 	if (handles.ptr == null)
 		return FALSE;
-
-	//SendMessageA(window, WM_MOUSEMOVE, 15073680, 1); // Not working
-	WPARAM xy = (400 | (230 << 16));
-	if(SetCursorPos(rect.left + 400, rect.top + 25 + 230) == TRUE)
-		SendMessageA(window, WM_LBUTTONDOWN, xy, 0);
-
 	scope(exit) free(handles.ptr);
 	foreach(i, threadId; threadIds[0 .. length])
 	{
@@ -164,7 +151,6 @@ export extern(C) BOOL ResumeThreadList(const(DWORD)* threadIds, int length) noth
 	
 	return TRUE;
 }
-*/
 
 enum TokenState : ubyte
 {
@@ -178,7 +164,7 @@ enum TokenType : ubyte
 {
 	normal,
 	xml,
-	property,
+	property
 }
 
 struct Token(S) if(isSomeString!S)
