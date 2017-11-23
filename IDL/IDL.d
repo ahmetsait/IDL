@@ -538,7 +538,10 @@ export extern(C) int ReadDataTxt(
 			return int.max;
 		}
 	}
-	catch { return int.min; }
+	catch(Throwable)
+	{
+		return int.min;
+	}
 	return 0;
 }
 
@@ -723,7 +726,7 @@ export extern(C) int InstantLoad(
 									default:
 										if(logFunc != null)
 										{
-											logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+											logFunc(utf.toUTFz!(char*)(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
 											warn++;
 											if(warn >= 20)
 												throw new IdlException(format(warningHigh));
@@ -735,7 +738,7 @@ export extern(C) int InstantLoad(
 						default:
 							if(logFunc != null)
 							{
-								logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+								logFunc(utf.toUTFz!(char*)(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
 								warn++;
 								if(warn >= 20)
 									throw new IdlException(format(warningHigh));
@@ -938,7 +941,7 @@ export extern(C) int InstantLoad(
 												default:
 													if(logFunc != null && !tokens[i].commentic)
 													{
-														auto msg = utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col));
+														auto msg = utf.toUTFz!(char*)(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col));
 														logFunc(msg, null, MsgType.Warning);
 														warn++;
 														if(warn >= 20)
@@ -951,7 +954,7 @@ export extern(C) int InstantLoad(
 									case "<stage>":
 										if(logFunc != null)
 										{
-											auto msg = utf.toUTF8z(format("Stage recursion in line %d at col %d", 
+											auto msg = utf.toUTFz!(char*)(format("Stage recursion in line %d at col %d", 
 													tokens[i].line, tokens[i].col));
 											logFunc(msg, null, MsgType.Warning);
 											warn++;
@@ -982,7 +985,7 @@ export extern(C) int InstantLoad(
 									default:
 										if(logFunc != null && !tokens[i].commentic)
 										{
-											auto msg = utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col));
+											auto msg = utf.toUTFz!(char*)(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col));
 											logFunc(msg, null, MsgType.Warning);
 											warn++;
 											if(warn >= 20)
@@ -995,7 +998,7 @@ export extern(C) int InstantLoad(
 						default:
 							if(logFunc != null && !tokens[i].commentic)
 							{
-								auto msg = utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col));
+								auto msg = utf.toUTFz!(char*)(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col));
 								logFunc(msg, null, MsgType.Warning);
 								warn++;
 								if(warn >= 20)
@@ -1211,7 +1214,7 @@ export extern(C) int InstantLoad(
 										default:
 											if(logFunc != null)
 											{
-												logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+												logFunc(utf.toUTFz!(char*)(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
 												warn++;
 												if(warn >= 20)
 													throw new IdlException(format(warningHigh));
@@ -1241,7 +1244,7 @@ export extern(C) int InstantLoad(
 											{
 												if(logFunc != null)
 												{
-													logFunc(utf.toUTF8z(format("Length %d for entry name is overflow, it should be less than %d: \"%s\" in line: %d at col: %d", n.length, DataFile.entry_names[entryi].length, n, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+													logFunc(utf.toUTFz!(char*)(format("Length %d for entry name is overflow, it should be less than %d: \"%s\" in line: %d at col: %d", n.length, DataFile.entry_names[entryi].length, n, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
 													warn++;
 													if(warn >= 20)
 														throw new IdlException(format(warningHigh));
@@ -1301,7 +1304,7 @@ export extern(C) int InstantLoad(
 									default:
 										if(logFunc != null)
 										{
-											logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+											logFunc(utf.toUTFz!(char*)(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
 											warn++;
 											if(warn >= 20)
 												throw new IdlException(format(warningHigh));
@@ -1319,7 +1322,7 @@ export extern(C) int InstantLoad(
 								{
 									if(logFunc != null)
 									{
-										logFunc(utf.toUTF8z(format("Length %d for frame caption is overflow, it should be less than %d: \"%s\" in line: %d at col: %d", c.length, DataFile.frames[frameId].fname.length, c, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+										logFunc(utf.toUTFz!(char*)(format("Length %d for frame caption is overflow, it should be less than %d: \"%s\" in line: %d at col: %d", c.length, DataFile.frames[frameId].fname.length, c, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
 										warn++;
 										if(warn >= 20)
 											throw new IdlException(format(warningHigh));
@@ -1436,7 +1439,7 @@ export extern(C) int InstantLoad(
 												default:
 													if(logFunc != null)
 													{
-														logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+														logFunc(utf.toUTFz!(char*)(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
 														warn++;
 														if(warn >= 20)
 															throw new IdlException(format(warningHigh));
@@ -1511,7 +1514,7 @@ export extern(C) int InstantLoad(
 												default:
 													if(logFunc != null)
 													{
-														logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+														logFunc(utf.toUTFz!(char*)(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
 														warn++;
 														if(warn >= 20)
 															throw new IdlException(format(warningHigh));
@@ -1563,7 +1566,7 @@ export extern(C) int InstantLoad(
 												default:
 													if(logFunc != null)
 													{
-														logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+														logFunc(utf.toUTFz!(char*)(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
 														warn++;
 														if(warn >= 20)
 															throw new IdlException(format(warningHigh));
@@ -1612,7 +1615,7 @@ export extern(C) int InstantLoad(
 												default:
 													if(logFunc != null)
 													{
-														logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+														logFunc(utf.toUTFz!(char*)(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
 														warn++;
 														if(warn >= 20)
 															throw new IdlException(format(warningHigh));
@@ -1694,7 +1697,7 @@ export extern(C) int InstantLoad(
 												default:
 													if(logFunc != null)
 													{
-														logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+														logFunc(utf.toUTFz!(char*)(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
 														warn++;
 														if(warn >= 20)
 															throw new IdlException(format(warningHigh));
@@ -1725,7 +1728,7 @@ export extern(C) int InstantLoad(
 												default:
 													if(logFunc != null)
 													{
-														logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+														logFunc(utf.toUTFz!(char*)(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
 														warn++;
 														if(warn >= 20)
 															throw new IdlException(format(warningHigh));
@@ -1745,7 +1748,7 @@ export extern(C) int InstantLoad(
 									default:
 										if(logFunc != null)
 										{
-											logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+											logFunc(utf.toUTFz!(char*)(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
 											warn++;
 											if(warn >= 20)
 												throw new IdlException(format(warningHigh));
@@ -1757,7 +1760,7 @@ export extern(C) int InstantLoad(
 						default:
 							if(logFunc != null)
 							{
-								logFunc(utf.toUTF8z(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
+								logFunc(utf.toUTFz!(char*)(format(unhandledMsg, tokens[i].str, tokens[i].line, tokens[i].col)), null, MsgType.Warning);
 								warn++;
 								if(warn >= 20)
 									throw new IdlException(format(warningHigh));
@@ -1968,7 +1971,7 @@ export extern(C) int InstantLoad(
 		catch(ParserException ex)
 		{
 			if(logFunc != null)
-				logFunc(utf.toUTF8z(ex.msg), null, MsgType.Error);
+				logFunc(utf.toUTFz!(char*)(ex.msg), null, MsgType.Error);
 			else
 				MessageBoxW(hMainWindow, utf.toUTF16z(ex.toString), "[IDL.dll] Data Parser Error", MB_SETFOREGROUND);
 			return 2;
@@ -1976,7 +1979,7 @@ export extern(C) int InstantLoad(
 		catch(IdlException ex)
 		{
 			if(logFunc != null)
-				logFunc(utf.toUTF8z(ex.msg), null, MsgType.Error);
+				logFunc(utf.toUTFz!(char*)(ex.msg), null, MsgType.Error);
 			else
 				MessageBoxW(hMainWindow, utf.toUTF16z(ex.toString), "[IDL.dll] Data Loading Error", MB_SETFOREGROUND);
 			return 2;
@@ -1984,7 +1987,7 @@ export extern(C) int InstantLoad(
 		catch(Exception ex)
 		{
 			if(logFunc != null)
-				logFunc(utf.toUTF8z(ex.toString), utf.toUTF8z("Unhandled Error"), MsgType.Error);
+				logFunc(utf.toUTFz!(char*)(ex.toString), utf.toUTFz!(char*)("Unhandled Error"), MsgType.Error);
 			else
 				MessageBoxW(hMainWindow, utf.toUTF16z(ex.toString), "[IDL.dll] Unhandled Error", MB_SETFOREGROUND);
 			return -1;
@@ -1992,13 +1995,16 @@ export extern(C) int InstantLoad(
 		catch(Error err)
 		{
 			if(logFunc != null)
-				logFunc(utf.toUTF8z(err.toString), utf.toUTF8z("Fatal Error"), MsgType.Error);
+				logFunc(utf.toUTFz!(char*)(err.toString), utf.toUTFz!(char*)("Fatal Error"), MsgType.Error);
 			else
 				MessageBoxW(hMainWindow, utf.toUTF16z(err.toString), "[IDL.dll] Fatal Error", MB_SETFOREGROUND);
 			return int.max;
 		}
 	}
-	catch(Throwable t) { return int.min + 1; }
+	catch(Throwable t)
+	{
+		return int.min;
+	}
 
 	return warn > 0 ? 1 : 0;
 }
