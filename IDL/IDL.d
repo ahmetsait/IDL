@@ -68,12 +68,61 @@ export extern(C) LONG ResumeProcess(DWORD processId) nothrow @nogc @system
 	return NtResumeProcess(pHandle);
 }
 
+/// Suspends a thread by it's ID.
+/// Note that this operation is not safe and can result in crash, deadlock or unstability of the process.
+/// Params:
+/// 	threadId =	ID of the thread to be suspended
+/// Returns:
+/// 	TRUE (1) on success, FALSE (0) otherwise.
+export extern(C) BOOL SuspendThreadId(DWORD threadId) nothrow @nogc @system
+{
+	HANDLE tHandle = OpenThread(THREAD_SUSPEND_RESUME, FALSE, threadId);
+	if(tHandle == INVALID_HANDLE_VALUE)
+		return FALSE;
+	scope(exit) CloseHandle(tHandle);
+	return cast(BOOL)(SuspendThread(tHandle) == -1);
+}
+
+/// Resumes a thread by it's ID.
+/// Note that this operation is not safe and can result in crash, deadlock or unstability of the process.
+/// Params:
+/// 	threadId =	ID of the thread to be resumed
+/// Returns:
+/// 	TRUE (1) on success, FALSE (0) otherwise.
+export extern(C) BOOL ResumeThreadId(DWORD threadId) nothrow @nogc @system
+{
+	HANDLE tHandle = OpenThread(THREAD_SUSPEND_RESUME, FALSE, threadId);
+	if(tHandle == INVALID_HANDLE_VALUE)
+		return FALSE;
+	scope(exit) CloseHandle(tHandle);
+	return cast(BOOL)(ResumeThread(tHandle) == -1);
+}
+
+/// Suspends a list of threads for reading/writing the process memory without causing data races.
+/// Note that this operation is not safe and can result in crash, deadlock or unstability of the process.
+/// Params:
+/// 	threadIds =	Raw pointer to a list of thread IDs
+/// 	length =	The length of threadIds array
+/// Returns:
+/// 	TRUE (1) on success, FALSE (0) otherwise.
+export extern(C) BOOL SuspendThreadList(const(DWORD)* threadIds, int length) nothrow @nogc @system
+{
+	scope HANDLE[] handles = (cast(HANDLE*)malloc(length * HANDLE.sizeof))[0 .. length];	// Cache handles because why not
+	if (handles.ptr == null)
+		return FALSE;
+	scope(exit) free(handles.ptr);
+	foreach(i, threadId; threadIds[0 .. length])
+	{
+		handles[i] = OpenThread(THREAD_SUSPEND_RESUME, FALSE, threadId);
+		if(handles[i] == INVALID_HANDLE_VALUE || SuspendThread(handles[i]) == -1)
 		{
-			threadIds[i] = ret = int.min;
+			foreach_reverse(handle; handles[0 .. i])	// Rollback the mess we've done
+				ResumeThread(handle);
+			return FALSE;
 		}
 	}
 	
-	return ret;
+	return TRUE;
 }
 
 /*
@@ -81,9 +130,19 @@ export extern(C) LONG ResumeProcess(DWORD processId) nothrow @nogc @system
 /// LF2 somehow does not respond to WM_LBUTTONDOWN x,y coordinates so the function 
 /// manually put cursor into the right place.
 export extern(C) BOOL SendGameStartMsg(HWND window) nothrow @nogc @system
+/// Resumes a list of threads that have been suspended.
+/// Note that this operation is not safe and can result in crash, deadlock or unstability of the process.
+/// Params:
+/// 	threadIds =	Raw pointer to a list of thread IDs
+/// 	length =	The length of threadIds array
+/// Returns:
+/// 	TRUE (1) on success, FALSE (0) otherwise.
+export extern(C) BOOL ResumeThreadList(const(DWORD)* threadIds, int length) nothrow @nogc @system
 {
 	RECT rect;
 	if(GetWindowRect(window, &rect) == FALSE)
+	scope HANDLE[] handles = (cast(HANDLE*)malloc(length * HANDLE.sizeof))[0 .. length];	// Cache handles because why not
+	if (handles.ptr == null)
 		return FALSE;
 
 	//SendMessageA(window, WM_MOUSEMOVE, 15073680, 1); // Not working
@@ -91,6 +150,18 @@ export extern(C) BOOL SendGameStartMsg(HWND window) nothrow @nogc @system
 	if(SetCursorPos(rect.left + 400, rect.top + 25 + 230) == TRUE)
 		SendMessageA(window, WM_LBUTTONDOWN, xy, 0);
 
+	scope(exit) free(handles.ptr);
+	foreach(i, threadId; threadIds[0 .. length])
+	{
+		handles[i] = OpenThread(THREAD_SUSPEND_RESUME, FALSE, threadId);
+		if(handles[i] == INVALID_HANDLE_VALUE || ResumeThread(handles[i]) == -1)
+		{
+			foreach_reverse(handle; handles[0 .. i])	// Rollback the mess we've done
+				ResumeThread(handle);
+			return FALSE;
+		}
+	}
+	
 	return TRUE;
 }
 */
