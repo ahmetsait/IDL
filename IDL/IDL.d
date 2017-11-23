@@ -180,7 +180,7 @@ struct Token(S) if(isSomeString!S)
 	}
 }
 
-const string tokenHeads = ['<'], tokenEnds = ['>', ':'], tokenDelims = [' ', '\t'], 
+immutable string tokenHeads = ['<'], tokenEnds = ['>', ':'], tokenDelims = [' ', '\t'], 
 	lineEnds = ['\n', '\r'];
 enum char lineCommentChar = '#';
 
@@ -421,7 +421,7 @@ enum DataState : ubyte
 /// second is the length of it, and so on. 
 /// hMainWindow param is passed to MessageBox WinApi function.
 export extern(C) int ReadDataTxt(
-	wchar* dataTxtFile, int length, 
+	const(wchar)* dataTxtFile, int length, 
 	ref ObjectData* objects, ref int objCount, 
 	ref BackgroundData* backgrounds, ref int bgCount, 
 	HWND hMainWindow) nothrow
