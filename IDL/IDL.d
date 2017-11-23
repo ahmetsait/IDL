@@ -193,7 +193,7 @@ class ParserException : Exception
 }
 
 /// This function tokenizes LF2 data and returns a slice-array of strings. Returned slices point to the given string.
-public Token!S[] parseData(S)(S data, bool includeComments = false) if(isSomeString!S)
+public pure Token!S[] parseData(S)(S data, bool includeComments = false) if(isSomeString!S)
 {
 	debug(LogFile)
 	{
@@ -201,7 +201,7 @@ public Token!S[] parseData(S)(S data, bool includeComments = false) if(isSomeStr
 		scope(exit) parserLog.close();
 	}
 	Token!S[] slices = new Token!S[0];
-	slices.reserve(data.length / 5); // Pre-allocate an aprox memory we might need
+	slices.reserve(data.length / 5);	// Pre-allocate an aprox memory we might need
 
 	bool commentness = false;
 	TokenState state = TokenState.none;
@@ -570,7 +570,7 @@ const string unhandledMsg = "Unhandled token: \"%s\" in line %d at col %d",
 /// It's not possible to load images and sounds for objects. layer bitmaps are supported and bgm works in stages.
 /// Other than that, this is pure magic.
 export extern(C) int InstantLoad(
-	char* data, int length, 
+	const(char)* data, int length, 
 	int procId, 
 	DataType dataType, 
 	int datIndex, 
@@ -584,10 +584,8 @@ export extern(C) int InstantLoad(
 		try
 		{
 			auto dat = data[0 .. length];
-			Token!(typeof(dat))[] tokens;
+			immutable Token!(typeof(dat))[] tokens = cast(immutable)parseData(dat, dataType == DataType.Stage); //parse comments in stages for LF2 compatibility
 
-			tokens = parseData(dat, dataType == DataType.Stage); //parse comments in stages for LF2 compatibility
-			
 			HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, procId);
 			if(hProc == INVALID_HANDLE_VALUE)
 				throw new IdlException("Could not open process. Error code: " ~ GetLastError().to!string ~ "\r\nMaybe you need Administrator privileges?");
@@ -765,7 +763,7 @@ export extern(C) int InstantLoad(
 				if(!rstages)
 					throw new IdlException("Could not allocate rstages: " ~ (sStage.sizeof * 60).to!string ~ " byte");
 				scope(exit) free(rstages.ptr);
-				
+
 				if(ReadProcessMemory(hProc, addr, rstages.ptr, (sStage.sizeof * 60), null) == FALSE)
 					throw new IdlException("Could not read process memory: stages");
 
