@@ -2,11 +2,11 @@
 module idl;
 
 pragma(lib, "user32");
+import core.sys.windows.windows;
+
 import core.memory : GC;
 import core.stdc.stdlib : malloc, calloc, free;
 import core.stdc.string : memcpy, memset;
-import core.sys.windows.threadaux;
-import core.sys.windows.windows;
 import std.conv : to, wtext, text;
 import std.format : format;
 import std.range : isInfinite, isIterable, isInputRange;
@@ -15,7 +15,6 @@ import std.stdio : File;
 import std.traits : isSomeString, isArray;
 import utf = std.utf;
 
-import processaux;
 import lf2;
 
 /// Returns whether a value exists in the given input-range.
