@@ -1,0 +1,16 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "build",
+			"command": ".\\build.ps1",
+			"type": "shell",
+			"args": [],
+			"group": "build",
+			"presentation": {
+				"reveal": "never"
+			},
+			"problemMatcher": "$dmd"
+		}
+	]
+}
