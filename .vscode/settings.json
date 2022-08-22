@@ -1,0 +1,6 @@
+{
+	"dscanner.ignoredKeys": [
+		"dscanner.style.long_line",
+		"dscanner.suspicious.catch_em_all",
+	]
+}
