@@ -1,144 +1,49 @@
 # Build Directories
 [Bb]in
 
-# Dependency Folders
+# Dependencies
 [Ll]ib
 
-# Compiled Object Files
+# Object Files
 *.o
+*.ko
 *.obj
+*.elf
 
-# Compiled Dynamic Libraries
-*.so
-*.dylib
+# Linker Output
+*.ilk
+*.map
+*.exp
+
+# Debug Files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Dynamic Libraries
 *.dll
+*.so
+*.so.*
+*.dylib
 
-# Compiled Static Libraries
-*.a
+# Static Libraries
 *.lib
+*.a
+*.la
+*.lo
 
 # Executables
 *.exe
+*.out
 
+# Code Coverage
+*.lst
+
+# ===
 # DUB
-# =========================
+# ===
 .dub
 docs.json
 __dummy.html
 docs/
-build/
-
-# Code coverage
-*.lst
-
-# =========================
-# Editors
-# =========================
-
-# Visual Studio Code
-# =========================
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
-
-# Local History for Visual Studio Code
-.history/
-
-# Built Visual Studio Code Extensions
-*.vsix
-
-# MonoDevelop
-# =========================
-*.userprefs
-*.usertasks
-
-# Kate
-# =========================
-.*.kate-swp
-.swp.*
-
-# Notepad++
-# =========================
-*.bak
-
-# =========================
-# Operating Systems
-# =========================
-
-# Linux
-# =========================
-*~
-
-# temporary files which can be created if a process still has a handle open of a deleted file
-.fuse_hidden*
-
-# KDE directory preferences
-.directory
-
-# Linux trash folder which might appear on any partition or disk
-.Trash-*
-
-# .nfs files are created when an open file is removed but is still being accessed
-.nfs*
-
-# macOS
-# =========================
-
-# General
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Icon must end with two \r
-Icon
-
-
-# Thumbnails
-._*
-
-# Files that might appear in the root of a volume
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-.com.apple.timemachine.donotpresent
-
-# Directories potentially created on remote AFP share
-.AppleDB
-.AppleDesktop
-Network Trash Folder
-Temporary Items
-.apdisk
-
-# Windows
-# =========================
-
-# Windows thumbnail cache files
-Thumbs.db
-Thumbs.db:encryptable
-ehthumbs.db
-ehthumbs_vista.db
-
-# Dump file
-*.stackdump
-
-# Folder config file
-[Dd]esktop.ini
-
-# Recycle Bin used on file shares
-$RECYCLE.BIN/
-
-# Windows Installer files
-*.cab
-*.msi
-*.msix
-*.msm
-*.msp
-
-# Windows shortcuts
-*.lnk
